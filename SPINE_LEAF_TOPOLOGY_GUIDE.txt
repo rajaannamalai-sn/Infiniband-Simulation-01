@@ -1,0 +1,322 @@
+================================================================================
+SPINE-LEAF TOPOLOGY GUIDE
+================================================================================
+
+Topology File: spine_leaf_fabric.topo
+Created: June 11, 2026
+Architecture: 2-Spine, 2-Leaf Data Center Fabric
+
+================================================================================
+NETWORK ARCHITECTURE
+================================================================================
+
+This topology implements a classic spine-leaf (Clos) architecture commonly
+used in modern data centers and high-performance computing environments.
+
+                    ┌─────────────┐     ┌─────────────┐
+                    │   Spine-1   │     │   Spine-2   │
+                    │  (Core)     │     │  (Core)     │
+                    └──────┬──┬───┘     └───┬──┬──────┘
+                           │  │             │  │
+                    ┌──────┘  └─────┐   ┌──┘  └───────┐
+                    │                │   │             │
+            ┌───────┴──────┐    ┌───┴───┴────┐        │
+            │   Leaf-1      │    │   Leaf-2   │        │
+            │   (Access)    │    │  (Access)  │        │
+            └───┬──────┬────┘    └────┬──────┬┘        │
+                │      │              │      │         │
+         ┌──────┘      └──────┐  ┌────┘      └────┐   │
+         │                    │  │                 │   │
+     ┌───┴────┐          ┌────┴──┴──┐         ┌───┴───┴──┐
+     │ Host-1 │          │  Host-2  │         │  Host-3  │  Host-4
+     └────────┘          └──────────┘         └──────────┘  └────────┘
+
+Key Features:
+- Full mesh between spine and leaf tiers
+- No spine-to-spine connections
+- No leaf-to-leaf connections
+- Hosts connect only to leaf switches
+- Multiple paths between any two hosts (redundancy)
+
+================================================================================
+DEVICE INVENTORY
+================================================================================
+
+SPINE SWITCHES (Core/Aggregation Layer):
+┌──────────┬─────────────────────┬───────────────────────┬───────────┐
+│ Device   │ System GUID         │ Switch GUID           │ Ports     │
+├──────────┼─────────────────────┼───────────────────────┼───────────┤
+│ Spine-1  │ 0x0002c90200300001  │ 0x0002c90200300001    │ 36        │
+│ Spine-2  │ 0x0002c90200300002  │ 0x0002c90200300002    │ 36        │
+└──────────┴─────────────────────┴───────────────────────┴───────────┘
+
+LEAF SWITCHES (Access/ToR Layer):
+┌──────────┬─────────────────────┬───────────────────────┬───────────┐
+│ Device   │ System GUID         │ Switch GUID           │ Ports     │
+├──────────┼─────────────────────┼───────────────────────┼───────────┤
+│ Leaf-1   │ 0x0002c90200300003  │ 0x0002c90200300003    │ 36        │
+│ Leaf-2   │ 0x0002c90200300004  │ 0x0002c90200300004    │ 36        │
+└──────────┴─────────────────────┴───────────────────────┴───────────┘
+
+HOSTS (Compute Nodes):
+┌──────────┬─────────────────────┬──────────────────┬───────────────┐
+│ Device   │ CA GUID             │ Connected To     │ Leaf Port     │
+├──────────┼─────────────────────┼──────────────────┼───────────────┤
+│ Host-1   │ 0x0002c90200300005  │ Leaf-1           │ Port 3        │
+│ Host-2   │ 0x0002c90200300006  │ Leaf-1           │ Port 4        │
+│ Host-3   │ 0x0002c90200300007  │ Leaf-2           │ Port 3        │
+│ Host-4   │ 0x0002c90200300008  │ Leaf-2           │ Port 4        │
+└──────────┴─────────────────────┴──────────────────┴───────────────┘
+
+================================================================================
+CONNECTION MATRIX
+================================================================================
+
+SPINE-1 Connections:
+  Port 1 <---> Leaf-1 Port 1
+  Port 2 <---> Leaf-2 Port 1
+
+SPINE-2 Connections:
+  Port 1 <---> Leaf-1 Port 2
+  Port 2 <---> Leaf-2 Port 2
+
+LEAF-1 Connections:
+  Port 1 <---> Spine-1 Port 1
+  Port 2 <---> Spine-2 Port 1
+  Port 3 <---> Host-1
+  Port 4 <---> Host-2
+
+LEAF-2 Connections:
+  Port 1 <---> Spine-1 Port 2
+  Port 2 <---> Spine-2 Port 2
+  Port 3 <---> Host-3
+  Port 4 <---> Host-4
+
+================================================================================
+TRAFFIC PATHS & REDUNDANCY
+================================================================================
+
+Example: Host-1 to Host-3 (cross-leaf communication)
+
+Path Option 1:
+  Host-1 -> Leaf-1 (port 3) -> Spine-1 (port 1->2) -> Leaf-2 (port 1) -> Host-3
+
+Path Option 2:
+  Host-1 -> Leaf-1 (port 3) -> Spine-2 (port 1->2) -> Leaf-2 (port 2) -> Host-3
+
+Key Benefits:
+- 2 independent paths between any two hosts on different leaves
+- Load balancing across spine switches
+- Fault tolerance: If one spine fails, traffic can use the other
+- Equal-cost multipath (ECMP) routing capability
+
+================================================================================
+SCALING CONSIDERATIONS
+================================================================================
+
+Current Configuration:
+- 2 Spine switches (each with 36 ports)
+- 2 Leaf switches (each with 36 ports)
+- 4 Hosts (2 per leaf)
+
+Expansion Capacity:
+- Can add up to 34 more leaf switches (spine ports available)
+- Each leaf can support up to 34 hosts (2 ports reserved for spines)
+- Maximum hosts in current config: 34 leaves x 34 hosts = 1,156 hosts
+
+To Scale Horizontally:
+- Add more leaf switches (connect to both spines)
+- Add more hosts to existing leaves
+
+To Scale Vertically:
+- Add more spine switches (requires reconnecting leaves)
+- Use higher port-count switches
+
+================================================================================
+DEPLOYMENT INSTRUCTIONS
+================================================================================
+
+1. Stop any running simulation:
+   docker stop ib-sim-active
+
+2. Remove old container:
+   docker rm ib-sim-active
+
+3. Start simulation with new topology:
+   docker run -d \
+     --name ib-sim-active \
+     -v $(pwd)/spine_leaf_fabric.topo:/etc/ibsim/topo.conf \
+     -p 5000:5000 \
+     ib-simulator:latest
+
+4. Verify the container is running:
+   docker ps | grep ib-sim-active
+
+5. Access the simulation:
+   docker exec -it ib-sim-active bash
+   export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so
+
+6. Discover the new topology:
+   ibnetdiscover
+
+================================================================================
+VERIFICATION COMMANDS
+================================================================================
+
+Once inside the container with LD_PRELOAD set:
+
+1. Discover all devices:
+   ibnetdiscover
+
+2. Check fabric connectivity:
+   ibnetdiscover -l
+
+3. View routing tables:
+   ibroute
+
+4. Query path between hosts on same leaf (Host-1 to Host-2):
+   saquery --src-to-dst <Host-1-LID>:<Host-2-LID>
+   Expected hops: 2 (Host-1 -> Leaf-1 -> Host-2)
+
+5. Query path between hosts on different leaves (Host-1 to Host-3):
+   saquery --src-to-dst <Host-1-LID>:<Host-3-LID>
+   Expected hops: 4 (Host-1 -> Leaf-1 -> Spine -> Leaf-2 -> Host-3)
+
+6. Check switch information:
+   smpquery nodeinfo <switch-LID>
+
+7. View all nodes:
+   ibhosts        # List all hosts
+   ibswitches     # List all switches
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Issue: Devices not discovered
+Solution: Ensure topology file is properly mounted
+  - Check: docker exec ib-sim-active cat /etc/ibsim/topo.conf
+
+Issue: OpenSM not running
+Solution: Start OpenSM manually
+  - docker exec -it ib-sim-active opensm
+
+Issue: LD_PRELOAD not set
+Solution: Export before running queries
+  - export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so
+
+Issue: LID assignments unclear
+Solution: Use ibnetdiscover to see all LIDs
+  - ibnetdiscover -l
+
+================================================================================
+LEARNING EXERCISES
+================================================================================
+
+1. Path Discovery:
+   - Query paths between all host pairs
+   - Identify which spine is used for each path
+   - Count the number of hops for each path
+
+2. Fault Tolerance Testing:
+   - Simulate spine switch failure (disable ports)
+   - Verify traffic can still flow through remaining spine
+   - Check how OpenSM reroutes traffic
+
+3. Load Distribution:
+   - Query paths between multiple host pairs
+   - Observe how traffic distributes across spines
+   - Understand ECMP behavior
+
+4. Switch Analysis:
+   - Query each switch's port information
+   - Identify active vs inactive ports
+   - Check link speeds and widths
+
+5. Topology Expansion:
+   - Add a third leaf switch to the topology
+   - Connect it to both spines
+   - Add hosts to the new leaf
+   - Verify connectivity
+
+================================================================================
+CERTIFICATION EXAM TOPICS
+================================================================================
+
+This topology demonstrates key concepts for NVIDIA InfiniBand certification:
+
+1. Subnet Management:
+   - LID assignment in complex topologies
+   - Routing table calculation
+   - SM port selection
+
+2. Fabric Architecture:
+   - Spine-leaf design principles
+   - ECMP routing
+   - Oversubscription ratios
+
+3. Path Records:
+   - Multiple path calculation
+   - Hop count analysis
+   - Path selection criteria
+
+4. Switch Configuration:
+   - Port numbering
+   - GUID assignment
+   - Vendor ID/Device ID
+
+5. Troubleshooting:
+   - Topology discovery
+   - Path tracing
+   - Link state verification
+
+================================================================================
+BEST PRACTICES
+================================================================================
+
+1. Port Numbering:
+   - Reserve lower ports for uplinks (spine connections)
+   - Use higher ports for downlinks (host connections)
+   - Document port assignments clearly
+
+2. GUID Management:
+   - Use sequential GUIDs for easier tracking
+   - Different GUID ranges for different device types
+   - Maintain GUID inventory
+
+3. Naming Conventions:
+   - Clear device names (Spine-1, Leaf-1, etc.)
+   - Include role in switch names
+   - Consistent naming scheme
+
+4. Documentation:
+   - Keep topology files version controlled
+   - Document all changes
+   - Maintain connection diagrams
+
+5. Testing:
+   - Verify all paths after topology changes
+   - Test failure scenarios
+   - Validate routing table correctness
+
+================================================================================
+ADDITIONAL RESOURCES
+================================================================================
+
+Related Files:
+- spine_leaf_fabric.topo (The topology definition)
+- fixed_fabric.topo (Simple 2-host topology for comparison)
+- TOPOLOGY_DIAGRAM.txt (Visualization examples)
+- HOST_COMMANDS_GUIDE.txt (Command reference)
+
+OpenFabrics Documentation:
+- InfiniBand Architecture Specification
+- OpenSM User Manual
+- ibnetdiscover man page
+
+NVIDIA Resources:
+- InfiniBand Switch User Manual
+- UFM Administration Guide
+- Network Topology Design Guide
+
+================================================================================

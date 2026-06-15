@@ -1,0 +1,277 @@
+================================================================================
+TOPOLOGY VISUALIZATION FILES - COMPLETE INDEX
+================================================================================
+
+Created: June 10, 2026
+Purpose: InfiniBand Network Topology Reference for NVIDIA Certification
+
+================================================================================
+📊 VISUAL DIAGRAM FILES (4 files)
+================================================================================
+
+1. TOPOLOGY_ASCII_ART.txt (8.5K)
+   ────────────────────────────────────────────────────────
+   Beautiful ASCII art visualizations:
+   • Full network view with detailed node boxes
+   • Simplified connection map
+   • Data path flow diagram
+   • Port layout diagram
+   • Address hierarchy tree
+   • Link matrix
+   • Query commands reference
+   • Complete with legends and symbols
+   
+   Best for: Visual learners, presentations, printing
+
+
+2. TOPOLOGY_DIAGRAM.txt (21K)
+   ────────────────────────────────────────────────────────
+   Comprehensive technical reference:
+   • 10 detailed sections
+   • Physical topology overview
+   • LID/GUID mapping tables
+   • Port connection matrix
+   • Detailed node specifications
+   • Routing tables & path records
+   • Address resolution tables
+   • Vendor identification
+   • Network statistics
+   • Query command reference
+   
+   Best for: In-depth study, certification prep, troubleshooting
+
+
+3. TOPOLOGY_QUICK_VIEW.txt (2.9K)
+   ────────────────────────────────────────────────────────
+   One-page quick reference:
+   • Essential information only
+   • Compact network diagram
+   • LID/GUID mappings
+   • Connection summary
+   • Key commands
+   • Statistics
+   
+   Best for: Quick lookup, cheat sheet, exam prep
+
+
+4. TOPOLOGY_LIVE_DATA.txt (5.9K)
+   ────────────────────────────────────────────────────────
+   Real simulation output:
+   • Unmodified ibnetdiscover output
+   • Actual saquery results
+   • Real smpquery data
+   • Link records
+   • Path query results
+   
+   Best for: Verification, comparing with real systems
+
+
+================================================================================
+🎯 WHICH FILE TO USE WHEN?
+================================================================================
+
+Scenario                                  Recommended File
+─────────────────────────────────────────────────────────────────────────────
+Learning network topology                 TOPOLOGY_ASCII_ART.txt
+Studying for certification exam           TOPOLOGY_DIAGRAM.txt
+Quick LID/GUID lookup                     TOPOLOGY_QUICK_VIEW.txt
+Verifying query output                    TOPOLOGY_LIVE_DATA.txt
+Creating presentation                     TOPOLOGY_ASCII_ART.txt
+Troubleshooting connectivity              TOPOLOGY_DIAGRAM.txt
+Memorizing commands                       TOPOLOGY_QUICK_VIEW.txt
+Comparing with real hardware              TOPOLOGY_LIVE_DATA.txt
+
+
+================================================================================
+📚 OTHER DOCUMENTATION FILES
+================================================================================
+
+Core Documentation:
+  • SIMULATION_SUCCESS_SUMMARY.txt (5.8K) - Complete technical overview
+  • SESSION_SUMMARY.txt (4.3K) - Session recap
+  • QUICK_REFERENCE.txt (2.7K) - Command reference
+
+Guides:
+  • HOST_COMMANDS_GUIDE.txt (7.5K) - Host command examples
+  • TROUBLESHOOTING_GUIDE.txt (8.4K) - Fix common issues
+  • WORKING_EXAMPLE_OUTPUT.txt (5.8K) - Success examples
+
+Configuration:
+  • fixed_fabric.topo (514B) - Working topology file
+  • Dockerfile (6.1K) - Container configuration
+
+
+================================================================================
+🔍 QUICK NAVIGATION
+================================================================================
+
+To Find:                          Open This File:
+─────────────────────────────────────────────────────────────────────────────
+Visual network diagram            TOPOLOGY_ASCII_ART.txt (Section 1)
+LID assignments                   TOPOLOGY_QUICK_VIEW.txt (LID MAPPING)
+GUID mappings                     TOPOLOGY_DIAGRAM.txt (Section 3)
+Port connections                  TOPOLOGY_DIAGRAM.txt (Section 4)
+Path between hosts                TOPOLOGY_ASCII_ART.txt (DATA PATH)
+Query commands                    TOPOLOGY_QUICK_VIEW.txt (KEY COMMANDS)
+Switch specifications             TOPOLOGY_DIAGRAM.txt (Section 5)
+Real query output                 TOPOLOGY_LIVE_DATA.txt
+
+
+================================================================================
+💾 FILE SIZE COMPARISON
+================================================================================
+
+File Name                          Size      Lines   Content Type
+─────────────────────────────────────────────────────────────────────────────
+TOPOLOGY_ASCII_ART.txt              8.5K      307    Visual diagrams
+TOPOLOGY_QUICK_VIEW.txt             2.9K       95    Quick reference
+TOPOLOGY_LIVE_DATA.txt              5.9K      170    Raw data
+TOPOLOGY_DIAGRAM.txt                 21K      709    Comprehensive docs
+─────────────────────────────────────────────────────────────────────────────
+TOTAL                                38K     1,281   Complete reference
+
+
+================================================================================
+🎓 RECOMMENDED STUDY SEQUENCE
+================================================================================
+
+For NVIDIA InfiniBand Certification:
+
+Day 1 - Visual Understanding:
+  1. Open TOPOLOGY_ASCII_ART.txt
+  2. Study the full network view
+  3. Understand data path flow
+  4. Review port layout
+
+Day 2 - Technical Details:
+  1. Read TOPOLOGY_DIAGRAM.txt
+  2. Memorize LID/GUID mappings
+  3. Study node specifications
+  4. Learn routing tables
+
+Day 3 - Hands-On Practice:
+  1. Use TOPOLOGY_QUICK_VIEW.txt as reference
+  2. Run all query commands
+  3. Compare output with TOPOLOGY_LIVE_DATA.txt
+  4. Practice troubleshooting scenarios
+
+Day 4 - Exam Preparation:
+  1. Create flashcards from TOPOLOGY_QUICK_VIEW.txt
+  2. Practice drawing topology from memory
+  3. Quiz yourself on LID/GUID/Port mappings
+  4. Time yourself on query commands
+
+
+================================================================================
+🚀 GETTING STARTED
+================================================================================
+
+New to InfiniBand? Start here:
+
+  Step 1: Open TOPOLOGY_ASCII_ART.txt
+          → Understand the visual layout
+
+  Step 2: Open TOPOLOGY_QUICK_VIEW.txt
+          → Learn the key concepts
+
+  Step 3: Access the container:
+          docker exec -it ib-sim-active bash
+          export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so
+
+  Step 4: Run discovery:
+          ibnetdiscover
+
+  Step 5: Compare output with TOPOLOGY_LIVE_DATA.txt
+          → Verify your understanding
+
+  Step 6: Study TOPOLOGY_DIAGRAM.txt for deep dive
+          → Master all technical details
+
+
+================================================================================
+📖 PRINTING RECOMMENDATIONS
+================================================================================
+
+For physical reference:
+
+  Quick Reference Card:
+    Print: TOPOLOGY_QUICK_VIEW.txt (1 page, double-sided)
+
+  Study Guide:
+    Print: TOPOLOGY_ASCII_ART.txt (4 pages)
+
+  Complete Reference:
+    Print: TOPOLOGY_DIAGRAM.txt (8-10 pages)
+
+  Verification Sheet:
+    Print: TOPOLOGY_LIVE_DATA.txt (2-3 pages)
+
+
+================================================================================
+💡 PRO TIPS
+================================================================================
+
+1. Keep TOPOLOGY_QUICK_VIEW.txt open while practicing commands
+2. Use TOPOLOGY_ASCII_ART.txt to explain concepts to others
+3. Compare your query results with TOPOLOGY_LIVE_DATA.txt
+4. Refer to TOPOLOGY_DIAGRAM.txt for exam-level detail
+5. Print TOPOLOGY_QUICK_VIEW.txt as a cheat sheet
+
+6. Create your own diagrams based on these templates
+7. Practice drawing the topology from memory
+8. Quiz yourself on LID-to-GUID mappings
+9. Time yourself running all query commands
+10. Use these as templates for documenting real networks
+
+
+================================================================================
+🔗 RELATED FILES
+================================================================================
+
+Troubleshooting:
+  • TROUBLESHOOTING_GUIDE.txt - If queries fail
+  • WORKING_EXAMPLE_OUTPUT.txt - What success looks like
+
+Configuration:
+  • fixed_fabric.topo - Topology definition
+  • QUICK_REFERENCE.txt - All commands
+
+Testing:
+  • HOST_COMMANDS_GUIDE.txt - What works/doesn't work
+  • host_commands_test.txt - Test results
+
+
+================================================================================
+✅ VERIFICATION CHECKLIST
+================================================================================
+
+Confirm your understanding by checking if you can:
+
+□ Draw the network topology from memory
+□ List all LIDs and their corresponding nodes
+□ Map each GUID to its node and port
+□ Trace packet path from Host-1 to Host-2
+□ Identify which switch ports connect to which hosts
+□ Explain the difference between System GUID and Port GUID
+□ Run ibnetdiscover and interpret output
+□ Query specific nodes by LID
+□ Check port status for any device
+□ Query paths between any two hosts
+
+If you can do all of the above, you're ready for more advanced topics!
+
+
+================================================================================
+📧 FEEDBACK & UPDATES
+================================================================================
+
+These files were generated for the IBSimulation-01 project.
+
+For questions about:
+  • InfiniBand concepts: Refer to OpenFabrics documentation
+  • Simulation issues: See TROUBLESHOOTING_GUIDE.txt
+  • Command usage: Check QUICK_REFERENCE.txt
+  • Topology changes: Edit fixed_fabric.topo and restart
+
+
+================================================================================

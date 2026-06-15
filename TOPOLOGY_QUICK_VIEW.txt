@@ -1,0 +1,91 @@
+================================================================================
+INFINIBAND TOPOLOGY - QUICK VIEW (One Page Reference)
+================================================================================
+
+NETWORK DIAGRAM:
+═══════════════
+
+        Host-1                MySwitch              Host-2
+     ┏━━━━━━━━━━━┓         ┏━━━━━━━━━━━┓        ┏━━━━━━━━━━━┓
+     ┃  LID: 3   ┃         ┃  LID: 2   ┃        ┃  LID: 4   ┃
+     ┃           ┃◄───1───►┃           ┃◄───2───►┃           ┃
+     ┃ Port 1    ┃  4xSDR  ┃  36 Ports ┃  4xSDR ┃ Port 1    ┃
+     ┗━━━━━━━━━━━┛ 2.5Gbps ┗━━━━━━━━━━━┛ 2.5Gbps┗━━━━━━━━━━━┛
+
+
+LID MAPPING:
+═══════════
+  LID 2 → MySwitch (36-port switch)
+  LID 3 → Host-1 (Channel Adapter)
+  LID 4 → Host-2 (Channel Adapter)
+
+
+GUID MAPPING:
+════════════
+  Switch (LID 2):
+    System GUID:  0x0002c90200200001
+    Node GUID:    0x0002c90200200001
+    Port GUID:    0x0002c90200200001
+
+  Host-1 (LID 3):
+    System GUID:  0x0002c90200200002
+    CA GUID:      0x0002c90200200002
+    Port GUID:    0x0002c90200200003
+
+  Host-2 (LID 4):
+    System GUID:  0x0002c90200200003
+    CA GUID:      0x0002c90200200003
+    Port GUID:    0x0002c90200200004
+
+
+CONNECTIONS:
+═══════════
+  Switch Port 1 ←→ Host-1 Port 1  (LID 2:1 ←→ LID 3:1)
+  Switch Port 2 ←→ Host-2 Port 1  (LID 2:2 ←→ LID 4:1)
+
+  All Links: Active, 4X width, 2.5 Gbps/lane = 10 Gbps total
+
+
+PATH: Host-1 → Host-2
+═════════════════════
+  H1(LID 3) → SW Port 1 → [Switch] → SW Port 2 → H2(LID 4)
+  Hops: 2  |  MTU: 2048  |  Rate: 10Gbps  |  Reversible: Yes
+
+
+IPv6 GIDs:
+═════════
+  Switch:  fe80::2:c902:20:1
+  Host-1:  fe80::2:c902:20:3
+  Host-2:  fe80::2:c902:20:4
+
+
+KEY COMMANDS:
+════════════
+  export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so
+
+  ibnetdiscover              # Full topology
+  saquery -N                 # Node list
+  saquery -x                 # Link status
+  saquery --src-to-dst 3:4   # Path H1→H2
+  smpquery nodeinfo 3        # Host-1 info
+  perfquery 3 1              # Host-1 counters
+
+
+VENDOR INFO:
+═══════════
+  Vendor: 0x2c9 (Mellanox/NVIDIA)
+  Switch Device: 0xc738
+  Host Device: 0x5a44
+  Technology: InfiniBand SDR (Single Data Rate)
+
+
+STATISTICS:
+══════════
+  Nodes: 3 (1 switch + 2 hosts)
+  Links: 2 bidirectional
+  Active Ports: 4
+  Available Ports: 34 (switch ports 3-36)
+  Subnet Manager: OpenSM 3.3.23 (MASTER state)
+  Total Bandwidth: 20 Gbps (2 × 10 Gbps)
+
+================================================================================

@@ -1,0 +1,334 @@
+================================================================================
+INFINIBAND SIMULATION - TROUBLESHOOTING GUIDE
+================================================================================
+
+PROBLEM: "Query SA failed: Connection timed out"
+================================================================================
+
+SYMPTOMS:
+---------
+root@container:/workspace# saquery --src-to-dst 3:4
+Query SA failed: Connection timed out
+
+root@container:/workspace# saquery -N
+Query SA failed: Connection timed out
+
+CAUSE:
+------
+OpenSM (Subnet Administrator) is not running or has crashed. OpenSM is
+required to answer SA (Subnet Administration) queries.
+
+SOLUTION:
+---------
+Restart both ibsim and OpenSM:
+
+docker exec -it ib-sim-active bash
+
+# Step 1: Kill old processes
+pkill -9 ibsim
+pkill -9 opensm
+sleep 2
+
+# Step 2: Start ibsim
+cd /workspace
+ibsim -s fixed_fabric.topo > /tmp/ibsim.log 2>&1 &
+sleep 3
+
+# Step 3: Start OpenSM
+export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so
+opensm > /tmp/opensm.log 2>&1 &
+sleep 4
+
+# Step 4: Set environment for queries
+export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so
+
+# Step 5: Test
+saquery -N
+
+VERIFICATION:
+-------------
+After restart, you should see:
+✓ OpenSM enters MASTER state (check /tmp/opensm.log)
+✓ saquery commands return data (not timeouts)
+✓ ibnetdiscover shows all nodes and links
+
+
+================================================================================
+PROBLEM: Processes show as <defunct> (Zombie Processes)
+================================================================================
+
+SYMPTOMS:
+---------
+ps aux | grep opensm
+root  439  0.0  0.0  0  0  ?  Z  19:58  0:00 [opensm] <defunct>
+
+CAUSE:
+------
+Parent process didn't properly wait() for child. Zombies consume PID space
+but don't affect simulation (except they indicate the process isn't running).
+
+SOLUTION:
+---------
+Same as above - kill and restart both ibsim and opensm.
+
+Note: pkill -9 won't remove zombie processes, but restarting will prevent
+new ones from being created.
+
+
+================================================================================
+PROBLEM: "No hosts visible in saquery -N"
+================================================================================
+
+SYMPTOMS:
+---------
+saquery -N only shows the switch, not Host-1 or Host-2
+
+CAUSE:
+------
+This is NORMAL for ibsim. Host Channel Adapters (CAs) are not always
+registered as separate node records in the SA database.
+
+VERIFICATION:
+-------------
+Check if hosts are actually present:
+
+1. Use ibnetdiscover (shows full topology):
+   ibnetdiscover
+
+   You should see:
+   Switch 36 "S-0002c90200200001"
+   [1] "H-0002c90200200002"[1]  # Host-1
+   [2] "H-0002c90200200003"[1]  # Host-2
+
+2. Check link records (shows host connectivity):
+   saquery -x
+
+   You should see 4 link records (bidirectional):
+   - LID 2 port 1 <--> LID 3 port 1
+   - LID 2 port 2 <--> LID 4 port 1
+
+3. Query host directly by LID:
+   smpquery nodeinfo 3  # Host-1
+   smpquery nodeinfo 4  # Host-2
+
+If these work, your hosts ARE present and operational.
+
+
+================================================================================
+PROBLEM: "ibwarn: mad_rpc_rmpp: _do_madrpc failed"
+================================================================================
+
+SYMPTOMS:
+---------
+Commands return warnings but may still work
+
+CAUSE:
+------
+Normal for ibsim - some management datagrams (MADs) don't have responses
+in simulated environment. Not all real hardware features are simulated.
+
+SOLUTION:
+---------
+Ignore these warnings if the command returns useful data. They don't
+indicate a problem with your topology or configuration.
+
+
+================================================================================
+PROBLEM: "Cannot parse remote lid and connection type"
+================================================================================
+
+SYMPTOMS:
+---------
+ibsim startup shows: "cannot parse remote lid and connection type"
+Then: "ibpanic: sim_init failed"
+
+CAUSE:
+------
+Topology file format is incorrect. Usually missing port GUID in parentheses.
+
+SOLUTION:
+---------
+Verify topology file format matches ibnetdiscover(8) format exactly:
+
+CORRECT:
+  [1](2c90200200003) "S-0002c90200200001"[1]
+
+INCORRECT:
+  [1] "S-0002c90200200001"[1]  # Missing (guid)
+
+Use the provided fixed_fabric.topo file as a template.
+
+
+================================================================================
+PROBLEM: Container exited or not running
+================================================================================
+
+SYMPTOMS:
+---------
+docker exec -it ib-sim-active bash
+Error: container is not running
+
+CAUSE:
+------
+Container was stopped or crashed.
+
+SOLUTION:
+---------
+# Check status
+docker ps -a | grep ib-sim
+
+# If stopped, restart
+docker start ib-sim-active
+
+# If doesn't exist, create new one
+docker rm ib-sim-active 2>/dev/null
+docker run -d --privileged --name ib-sim-active ib-simulator tail -f /dev/null
+
+# Then run simulation inside
+docker exec -it ib-sim-active bash
+cd /workspace
+ibsim -s fixed_fabric.topo > /tmp/ibsim.log 2>&1 &
+sleep 3
+export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so
+opensm > /tmp/opensm.log 2>&1 &
+sleep 4
+
+
+================================================================================
+PROBLEM: "LD_PRELOAD not set" or "umad device not found"
+================================================================================
+
+SYMPTOMS:
+---------
+Commands fail or can't find IB devices
+
+CAUSE:
+------
+Environment variable not set. This tells IB tools to use the simulator
+instead of looking for real hardware.
+
+SOLUTION:
+---------
+Always set before running commands:
+export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so
+
+Or run commands with inline environment:
+env LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so saquery -N
+
+Add to your shell profile for persistence:
+echo 'export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so' >> ~/.bashrc
+
+
+================================================================================
+QUICK DIAGNOSTIC CHECKLIST
+================================================================================
+
+Run these commands to verify simulation health:
+
+1. Check processes:
+   ps aux | grep -E 'ibsim|opensm' | grep -v grep | grep -v defunct
+
+   Should show:
+   ✓ ibsim -s fixed_fabric.topo (running, not defunct)
+   ✓ opensm (running, not defunct)
+
+2. Check OpenSM state:
+   tail /tmp/opensm.log
+
+   Should show:
+   ✓ "Entering MASTER state"
+
+3. Check fabric discovery:
+   export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so
+   ibnetdiscover
+
+   Should show:
+   ✓ 1 Switch (36 ports)
+   ✓ 2 Hosts connected to ports 1 and 2
+
+4. Check SA queries:
+   saquery -N
+   saquery -x
+   saquery --src-to-dst 3:4
+
+   Should return:
+   ✓ Node records
+   ✓ Link records
+   ✓ Path records (not timeouts)
+
+5. Check host connectivity:
+   smpquery nodeinfo 3
+   smpquery nodeinfo 4
+
+   Should show:
+   ✓ SystemGUID for each host
+   ✓ PortGUID for each host
+
+
+================================================================================
+RESTART SCRIPT (Copy-Paste Solution)
+================================================================================
+
+If anything goes wrong, copy and paste this entire block:
+
+docker exec -it ib-sim-active bash << 'RESTART'
+# Kill old processes
+pkill -9 ibsim opensm
+sleep 2
+
+# Start simulation
+cd /workspace
+ibsim -s fixed_fabric.topo > /tmp/ibsim.log 2>&1 &
+sleep 3
+
+# Start OpenSM
+export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so
+opensm > /tmp/opensm.log 2>&1 &
+sleep 4
+
+# Verify
+echo "=== Processes ==="
+ps aux | grep -E 'ibsim|opensm' | grep -v grep | grep -v defunct
+
+echo ""
+echo "=== OpenSM Status ==="
+tail -5 /tmp/opensm.log
+
+echo ""
+echo "=== Test Query ==="
+saquery -N | head -20
+
+echo ""
+echo "=== Network Discovery ==="
+ibnetdiscover | head -30
+
+echo ""
+echo "Simulation ready! Don't forget to:"
+echo "export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so"
+RESTART
+
+
+================================================================================
+GETTING HELP
+================================================================================
+
+Log Files:
+  /tmp/ibsim.log        - ibsim startup and errors
+  /tmp/opensm.log       - OpenSM subnet manager log
+  /var/log/opensm.log   - Detailed OpenSM operations
+
+Verbose Mode:
+  ibsim -v -s fixed_fabric.topo    # Verbose ibsim
+  opensm -V                         # Verbose OpenSM
+
+Documentation:
+  man ibnetdiscover
+  man saquery
+  man smpquery
+  man opensm
+
+Online Resources:
+  https://github.com/linux-rdma/ibsim
+  https://www.openfabrics.org/
+
+================================================================================

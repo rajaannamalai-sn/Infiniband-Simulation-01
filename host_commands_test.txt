@@ -1,0 +1,45 @@
+=== Available IB Command-Line Tools ===
+/usr/sbin/ibping
+/usr/sbin/ibsysstat
+/usr/sbin/perfquery
+/usr/sbin/ibportstate
+/usr/sbin/ibaddr
+
+=== Testing Host-to-Host Commands ===
+
+1. Query path from Host-1 (LID 3) to Host-2 (LID 4):
+		dlid....................4
+		slid....................3
+		mtu.....................0x84
+		rate....................0x83
+
+2. Port State Query (Host-1, LID 3, Port 1):
+LinkWidthEnabled:................4X
+LinkWidthSupported:..............1X or 4X or 8X or 12X or 2X
+LinkWidthActive:.................4X
+LinkSpeedSupported:..............2.5 Gbps or 5.0 Gbps or 10.0 Gbps
+PhysLinkState:...................LinkUp
+LinkSpeedActive:.................2.5 Gbps
+LinkSpeedEnabled:................2.5 Gbps
+				IsLinkWidth2xSupported
+
+3. Node Info for Host-1 (LID 3):
+SystemGuid:......................0x0002c90200200002
+PortGuid:........................0x0002c90200200003
+
+4. Node Info for Host-2 (LID 4):
+SystemGuid:......................0x0002c90200200003
+PortGuid:........................0x0002c90200200004
+
+5. Check if perfquery is available:
+/usr/sbin/perfquery
+ibwarn: [582] sim_connect: attached as client 1 at node "S-0002c90200200001"
+# Port counters: Lid 3 port 1 (CapMask: 0x1200)
+PortSelect:......................1
+CounterSelect:...................0x0000
+SymbolErrorCounter:..............0
+LinkErrorRecoveryCounter:........0
+LinkDownedCounter:...............0
+PortRcvErrors:...................0
+PortRcvRemotePhysicalErrors:.....0
+PortRcvSwitchRelayErrors:........0

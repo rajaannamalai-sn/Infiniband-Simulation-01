@@ -1,0 +1,55 @@
+=== Advanced Host Commands ===
+
+6. ibping - Ping between Host-1 and Host-2:
+ibwarn: [592] sim_connect: attached as client 1 at node "S-0002c90200200001"
+ibwarn: [592] mad_rpc_rmpp: _do_madrpc failed; dport (Lid 4)
+ibwarn: [592] mad_rpc_rmpp: _do_madrpc failed; dport (Lid 4)
+ibwarn: [592] mad_rpc_rmpp: _do_madrpc failed; dport (Lid 4)
+
+---  (Lid 4) ibping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 3001 ms
+rtt min/avg/max = 0.000/0.000/0.000 ms
+
+7. Port State Control (Query switch port connected to Host-1):
+ibwarn: [594] sim_connect: attached as client 1 at node "S-0002c90200200001"
+ibwarn: [594] _do_madrpc: recv failed: Connection timed out
+ibwarn: [594] mad_rpc: _do_madrpc failed; dport (Lid 2 DR path slid 2; dlid 65535; 0,1)
+Switch PortInfo:
+# Port info: Lid 2 port 1
+LinkState:.......................Active
+PhysLinkState:...................LinkUp
+Lid:.............................0
+SMLid:...........................0
+LMC:.............................0
+LinkWidthSupported:..............1X or 4X or 8X or 12X or 2X
+LinkWidthEnabled:................4X
+LinkWidthActive:.................4X
+LinkSpeedSupported:..............2.5 Gbps or 5.0 Gbps or 10.0 Gbps
+LinkSpeedEnabled:................2.5 Gbps
+
+8. Performance Counters for Host-2 (LID 4):
+# Port counters: Lid 4 port 1 (CapMask: 0x1200)
+CounterSelect:...................0x0000
+SymbolErrorCounter:..............0
+LinkErrorRecoveryCounter:........0
+LinkDownedCounter:...............0
+PortRcvErrors:...................0
+PortRcvRemotePhysicalErrors:.....0
+PortRcvSwitchRelayErrors:........0
+PortXmitDiscards:................0
+PortXmitConstraintErrors:........0
+PortRcvConstraintErrors:.........0
+CounterSelect2:..................0x00
+PortXmitData:....................1440
+PortRcvData:.....................2160
+PortXmitPkts:....................20
+
+9. Check System Information:
+ibwarn: [601] sim_connect: attached as client 1 at node "S-0002c90200200001"
+ibpanic: [601] ibsystat: umad_recv failed.: Connection timed out
+
+10. Address Resolution (LID to GUID):
+ibwarn: [604] sim_connect: attached as client 1 at node "S-0002c90200200001"
+LID start 0x3 end 0x3
+ibwarn: [585] sim_connect: attached as client 1 at node "S-0002c90200200001"
+LID start 0x4 end 0x4

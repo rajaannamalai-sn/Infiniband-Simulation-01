@@ -1,0 +1,255 @@
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    INFINIBAND NETWORK TOPOLOGY MAP                           ║
+║                         ASCII Art Visualization                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+
+                             FULL NETWORK VIEW
+                         ═════════════════════════
+
+
+
+     ┏━━━━━━━━━━━━━━━━━━━━━━━━━┓              ┏━━━━━━━━━━━━━━━━━━━━━━━━━┓
+     ┃        HOST-1           ┃              ┃        HOST-2           ┃
+     ┃   (Channel Adapter)     ┃              ┃   (Channel Adapter)     ┃
+     ┃ ─────────────────────── ┃              ┃ ─────────────────────── ┃
+     ┃  LID:  3                ┃              ┃  LID:  4                ┃
+     ┃  Name: H-..200002       ┃              ┃  Name: H-..200003       ┃
+     ┃  Type: CA (Host)        ┃              ┃  Type: CA (Host)        ┃
+     ┃ ─────────────────────── ┃              ┃ ─────────────────────── ┃
+     ┃  System GUID:           ┃              ┃  System GUID:           ┃
+     ┃  0x0002c90200200002     ┃              ┃  0x0002c90200200003     ┃
+     ┃                         ┃              ┃                         ┃
+     ┃  Port GUID:             ┃              ┃  Port GUID:             ┃
+     ┃  0x0002c90200200003     ┃              ┃  0x0002c90200200004     ┃
+     ┃                         ┃              ┃                         ┃
+     ┃  IPv6 GID:              ┃              ┃  IPv6 GID:              ┃
+     ┃  fe80::2:c902:20:3      ┃              ┃  fe80::2:c902:20:4      ┃
+     ┗━━━━━━━━━━┳━━━━━━━━━━━━━━┛              ┗━━━━━━━━━━┳━━━━━━━━━━━━━━┛
+                ┃                                        ┃
+                ┃ Port 1                      Port 1     ┃
+                ┃ Active                      Active     ┃
+                ┃ LinkUp                      LinkUp     ┃
+                ┃ 4xSDR                       4xSDR      ┃
+                ┃ 2.5 Gbps                    2.5 Gbps   ┃
+                ┃                                        ┃
+         ╔══════╩════════════════════════════════════════╩══════╗
+         ║                                                      ║
+         ║                  10 Gbps ↕                           ║
+         ║                  10 Gbps ↕                           ║
+         ║                                                      ║
+         ╚══════╦════════════════════════════════════════╦══════╝
+                ┃ Port 1                      Port 2     ┃
+                ┃ Active                      Active     ┃
+                ┃ 4xSDR                       4xSDR      ┃
+                ┃                                        ┃
+     ┏━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━┓
+     ┃                                                             ┃
+     ┃                       MYSWITCH                              ┃
+     ┃                    (IB Switch/Director)                     ┃
+     ┃ ─────────────────────────────────────────────────────────  ┃
+     ┃  LID:  2                                                    ┃
+     ┃  Name: S-0002c90200200001                                   ┃
+     ┃  Type: Switch (Managed)                                     ┃
+     ┃ ─────────────────────────────────────────────────────────  ┃
+     ┃  System GUID:  0x0002c90200200001                           ┃
+     ┃  Node GUID:    0x0002c90200200001                           ┃
+     ┃  Switch GUID:  0x0002c90200200001                           ┃
+     ┃                                                             ┃
+     ┃  Ports:        36 total (2 active, 34 available)            ┃
+     ┃  Vendor:       0x2c9 (Mellanox/NVIDIA)                      ┃
+     ┃  Device:       0xc738                                       ┃
+     ┃  Revision:     0xA1                                         ┃
+     ┃                                                             ┃
+     ┃  Active Ports: 1 ═══════════════════════ Host-1 (LID 3)    ┃
+     ┃                2 ═══════════════════════ Host-2 (LID 4)    ┃
+     ┃                                                             ┃
+     ┃  Available:    Ports 3-36 (not connected)                   ┃
+     ┃                                                             ┃
+     ┃  Subnet Manager: OpenSM 3.3.23 (MASTER)                     ┃
+     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+
+
+
+                        SIMPLIFIED CONNECTION MAP
+                       ═══════════════════════════
+
+
+       Host-1              Switch              Host-2
+        (CA)              (36-Port)              (CA)
+      ┌──────┐            ┌──────┐            ┌──────┐
+      │      │            │      │            │      │
+      │ LID  │◄─── 1 ────►│ LID  │◄─── 2 ────►│ LID  │
+      │  3   │   4xSDR    │  2   │   4xSDR    │  4   │
+      │      │   10Gbps   │      │   10Gbps   │      │
+      └──────┘            └──────┘            └──────┘
+
+
+
+
+                          DATA PATH DIAGRAM
+                        ═════════════════════
+
+
+   When Host-1 sends to Host-2, packets flow:
+
+
+     Source                 Switch               Destination
+   ┌────────┐            ┌──────────┐            ┌────────┐
+   │ Host-1 │            │ MySwitch │            │ Host-2 │
+   │ LID 3  │            │  LID 2   │            │ LID 4  │
+   └───┬────┘            └────┬─┬───┘            └───┬────┘
+       │                      │ │                    │
+       │ 1. Packet           │ │                    │
+       │    Xmit             │ │                    │
+       ├─────────────────────►│ │                    │
+       │                      │ │                    │
+       │                   2. Lookup                 │
+       │                   Forwarding                │
+       │                   Table                     │
+       │                      │ │                    │
+       │                      │ │ 3. Forward         │
+       │                      │ │    Packet          │
+       │                      │ ├────────────────────►
+       │                      │ │                    │
+       │                      │ │                 4. Packet
+       │                      │ │                    Rcv
+       │                      │ │                    │
+       │◄─────────────────────┼─┼────────────────────┤
+       │    5. ACK            │ │                    │
+       │    (if required)     │ │                    │
+
+
+    Hops: 2  (Host → Switch → Host)
+    MTU: 2048 bytes
+    Rate: 10 Gbps per link
+    Reversible: Yes
+
+
+
+
+                         PORT LAYOUT DIAGRAM
+                       ═════════════════════
+
+
+                         MySwitch (LID 2)
+                         36-Port Switch
+     ╔═══════════════════════════════════════════════════╗
+     ║ Port  0: Management (SM)                          ║
+     ║ Port  1: [═══ACTIVE═══] → Host-1 (LID 3)         ║
+     ║ Port  2: [═══ACTIVE═══] → Host-2 (LID 4)         ║
+     ║ Port  3: [ Available  ]                           ║
+     ║ Port  4: [ Available  ]                           ║
+     ║ Port  5: [ Available  ]                           ║
+     ║   ...                                             ║
+     ║ Port 36: [ Available  ]                           ║
+     ╚═══════════════════════════════════════════════════╝
+
+
+
+
+                         ADDRESS HIERARCHY
+                       ═══════════════════════
+
+
+    ┌─────────────────────────────────────────────────────┐
+    │           Subnet: fe80:0000:0000:0000              │
+    │           (IPv6 Link-Local)                         │
+    └────────────────┬────────────────────────────────────┘
+                     │
+         ┌───────────┼───────────┐
+         │           │           │
+         ▼           ▼           ▼
+    ┌────────┐  ┌────────┐  ┌────────┐
+    │ LID 2  │  │ LID 3  │  │ LID 4  │
+    │ Switch │  │ Host-1 │  │ Host-2 │
+    └───┬────┘  └───┬────┘  └───┬────┘
+        │           │           │
+        ▼           ▼           ▼
+     Port GID    Port GID    Port GID
+    ::20:1      ::20:3      ::20:4
+
+
+
+
+                          LINK MATRIX
+                       ═════════════════
+
+
+    From Device  │ From Port │ ═══════ │ To Port │ To Device
+    ─────────────┼───────────┼─────────┼─────────┼──────────
+    Switch (2)   │     1     │ ◄─────► │    1    │ Host-1 (3)
+    Switch (2)   │     2     │ ◄─────► │    1    │ Host-2 (4)
+
+    All Links: Bidirectional, Active, 4xSDR (10 Gbps)
+
+
+
+
+                         QUERY COMMANDS
+                       ═════════════════
+
+
+    Get LID Info:
+      saquery -N                    # List all LIDs
+
+    Get GUID Info:
+      smpquery nodeinfo 2           # Switch GUID
+      smpquery nodeinfo 3           # Host-1 GUID
+      smpquery nodeinfo 4           # Host-2 GUID
+
+    Get Port Status:
+      smpquery portinfo 2 1         # Switch port 1
+      smpquery portinfo 3 1         # Host-1 port 1
+
+    Get Paths:
+      saquery --src-to-dst 3:4      # Host-1 → Host-2
+
+    Full Topology:
+      ibnetdiscover                 # Complete view
+
+
+    Remember: export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so
+
+
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                              LEGEND                                          ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  Symbols:
+    ═══     Active connection / data path
+    ───     Available/unused
+    ◄─►     Bidirectional link
+    →       Unidirectional flow
+    ┃       Vertical connection
+    ┏ ┓     Node boundary
+    ╔ ╗     Section boundary
+
+  Abbreviations:
+    CA      Channel Adapter (Host/End Node)
+    LID     Local Identifier (16-bit)
+    GUID    Global Unique Identifier (64-bit)
+    GID     Global Identifier (128-bit IPv6)
+    SM      Subnet Manager
+    4xSDR   4 lanes × Single Data Rate (10 Gbps)
+    Gbps    Gigabits per second
+    MTU     Maximum Transmission Unit
+
+  Port States:
+    Active  Port is operational and passing traffic
+    LinkUp  Physical link is established
+    Down    Port not connected
+
+  Link Speeds:
+    SDR     Single Data Rate = 2.5 Gbps/lane
+    4x      4 lanes = 4 × 2.5 = 10 Gbps total
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║              Generated for NVIDIA InfiniBand Certification Training          ║
+║                     Simulation running in Docker container                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝

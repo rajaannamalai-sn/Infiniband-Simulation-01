@@ -1,0 +1,160 @@
+================================================================================
+LIVE TOPOLOGY DATA - CAPTURED FROM SIMULATION
+================================================================================
+Generated: Wed Jun 10 16:01:44 CDT 2026
+
+1. COMPLETE TOPOLOGY (ibnetdiscover):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# Topology file: generated on Wed Jun 10 21:01:44 2026
+#
+# Initiated from node 0002c90200200001 port 0002c90200200001
+
+vendid=0x2c9
+devid=0xc738
+sysimgguid=0x2c90200200001
+switchguid=0x2c90200200001(2c90200200001)
+Switch	36 "S-0002c90200200001"		# "MySwitch" base port 0 lid 2 lmc 0
+[1]	"H-0002c90200200002"[1](2c90200200003) 		# "Host-1" lid 3 4xSDR
+[2]	"H-0002c90200200003"[1](2c90200200004) 		# "Host-2" lid 4 4xSDR
+
+vendid=0x2c9
+devid=0x5a44
+sysimgguid=0x2c90200200003
+caguid=0x2c90200200003
+Ca	2 "H-0002c90200200003"		# "Host-2"
+[1](2c90200200004) 	"S-0002c90200200001"[2]		# lid 4 lmc 0 "MySwitch" lid 2 4xSDR
+
+vendid=0x2c9
+devid=0x5a44
+sysimgguid=0x2c90200200002
+caguid=0x2c90200200002
+Ca	2 "H-0002c90200200002"		# "Host-1"
+[1](2c90200200003) 	"S-0002c90200200001"[1]		# lid 3 lmc 0 "MySwitch" lid 2 4xSDR
+
+2. NODE RECORDS (saquery -N):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NodeRecord dump:
+		lid.....................2
+		reserved................0x0
+		base_version............0x1
+		class_version...........0x1
+		node_type...............Switch
+		num_ports...............36
+		sys_guid................0x0002c90200200001
+		node_guid...............0x0002c90200200001
+		port_guid...............0x0002c90200200001
+		partition_cap...........0x8
+		device_id...............0xC738
+		revision................0xA1
+		port_num................0
+		vendor_id...............0x2C9
+		NodeDescription.........MySwitch
+
+3. LINK RECORDS (saquery -x):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LinkRecord dump:
+		FromLID....................2
+		FromPort...................1
+		ToPort.....................1
+		ToLID......................3
+LinkRecord dump:
+		FromLID....................2
+		FromPort...................2
+		ToPort.....................1
+		ToLID......................4
+LinkRecord dump:
+		FromLID....................3
+		FromPort...................1
+		ToPort.....................1
+		ToLID......................2
+LinkRecord dump:
+		FromLID....................4
+		FromPort...................1
+		ToPort.....................2
+		ToLID......................2
+
+4. SWITCH PORT 1 INFO (smpquery portinfo 2 1):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Port info: Lid 2 port 1
+Mkey:............................<not displayed>
+GidPrefix:.......................0x0000000000000000
+Lid:.............................0
+SMLid:...........................0
+CapMask:.........................0x0
+DiagCode:........................0x0000
+MkeyLeasePeriod:.................0
+LocalPort:.......................0
+LinkWidthEnabled:................4X
+LinkWidthSupported:..............1X or 4X or 8X or 12X or 2X
+LinkWidthActive:.................4X
+LinkSpeedSupported:..............2.5 Gbps or 5.0 Gbps or 10.0 Gbps
+LinkState:.......................Active
+PhysLinkState:...................LinkUp
+LinkDownDefState:................Polling
+ProtectBits:.....................0
+LMC:.............................0
+LinkSpeedActive:.................2.5 Gbps
+LinkSpeedEnabled:................2.5 Gbps
+NeighborMTU:.....................2048
+SMSL:............................0
+VLCap:...........................VL0-7
+InitType:........................0x00
+VLHighLimit:.....................0
+VLArbHighCap:....................8
+VLArbLowCap:.....................8
+InitReply:.......................0x00
+MtuCap:..........................2048
+VLStallCount:....................7
+
+5. HOST-1 NODE INFO (smpquery nodeinfo 3):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Node info: Lid 3
+BaseVers:........................1
+ClassVers:.......................1
+NodeType:........................Channel Adapter
+NumPorts:........................2
+SystemGuid:......................0x0002c90200200002
+Guid:............................0x0002c90200200002
+PortGuid:........................0x0002c90200200003
+PartCap:.........................64
+DevId:...........................0x5a44
+Revision:........................0x000000a1
+LocalPort:.......................1
+VendorId:........................0x0002c9
+
+6. HOST-2 NODE INFO (smpquery nodeinfo 4):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Node info: Lid 4
+BaseVers:........................1
+ClassVers:.......................1
+NodeType:........................Channel Adapter
+NumPorts:........................2
+SystemGuid:......................0x0002c90200200003
+Guid:............................0x0002c90200200003
+PortGuid:........................0x0002c90200200004
+PartCap:.........................64
+DevId:...........................0x5a44
+Revision:........................0x000000a1
+LocalPort:.......................1
+VendorId:........................0x0002c9
+
+7. PATH: Host-1 → Host-2 (saquery --src-to-dst 3:4):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PathRecord dump:
+		service_id..............0x0000000000000000
+		dgid....................fe80::2:c902:20:4
+		sgid....................fe80::2:c902:20:3
+		dlid....................4
+		slid....................3
+		hop_flow_raw............0x0
+		tclass..................0x0
+		num_path_revers.........0x80
+		pkey....................0xFFFF
+		qos_class...............0x0
+		sl......................0x0
+		mtu.....................0x84
+		rate....................0x83
+		pkt_life................0x92
+		preference..............0x0
+		resv2...................0x000000000000

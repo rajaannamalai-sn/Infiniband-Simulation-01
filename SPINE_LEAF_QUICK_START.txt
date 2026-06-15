@@ -1,0 +1,203 @@
+================================================================================
+SPINE-LEAF TOPOLOGY - QUICK START GUIDE
+================================================================================
+
+Container: ib-sim-active
+Topology File: spine_leaf_fabric.topo
+Status: RUNNING AND VERIFIED
+
+================================================================================
+LID ASSIGNMENTS (After OpenSM Discovery)
+================================================================================
+
+SWITCHES:
+  Spine-1: LID 1
+  Spine-2: LID 2
+  Leaf-1:  LID 3
+  Leaf-2:  LID 4
+
+HOSTS:
+  Host-1: LID 5  (Connected to Leaf-1 port 3)
+  Host-2: LID 6  (Connected to Leaf-1 port 4)
+  Host-3: LID 7  (Connected to Leaf-2 port 3)
+  Host-4: LID 8  (Connected to Leaf-2 port 4)
+
+================================================================================
+NETWORK TOPOLOGY
+================================================================================
+
+                    Spine-1 (LID 1)     Spine-2 (LID 2)
+                         ↕                     ↕
+                    ┌────┴────┐           ┌────┴────┐
+                    │         │           │         │
+                Leaf-1 (LID 3)  ←────→  Leaf-2 (LID 4)
+                   ↕    ↕                  ↕    ↕
+              Host-1  Host-2          Host-3  Host-4
+              (LID 5) (LID 6)         (LID 7) (LID 8)
+
+Connections:
+- Both spines connect to both leaves (full mesh)
+- Leaf-1 has Host-1 and Host-2
+- Leaf-2 has Host-3 and Host-4
+
+================================================================================
+ACCESS THE SIMULATION
+================================================================================
+
+1. Enter the container:
+   docker exec -it ib-sim-active bash
+
+2. Set LD_PRELOAD (REQUIRED for all IB commands):
+   export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so
+
+3. Run IB commands:
+   ibswitches
+   ibhosts
+   ibnetdiscover
+
+================================================================================
+VERIFIED TEST COMMANDS
+================================================================================
+
+All of these commands have been tested and confirmed working:
+
+1. List all switches:
+   docker exec ib-sim-active bash -c 'export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so && ibswitches'
+
+2. List all hosts:
+   docker exec ib-sim-active bash -c 'export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so && ibhosts'
+
+3. Discover full topology:
+   docker exec ib-sim-active bash -c 'export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so && ibnetdiscover'
+
+4. Query path Host-1 to Host-2 (same leaf):
+   docker exec ib-sim-active bash -c 'export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so && saquery --src-to-dst 5:6'
+
+5. Query path Host-1 to Host-3 (across leaves):
+   docker exec ib-sim-active bash -c 'export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so && saquery --src-to-dst 5:7'
+
+6. Query path Host-3 to Host-4 (same leaf):
+   docker exec ib-sim-active bash -c 'export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so && saquery --src-to-dst 7:8'
+
+7. Query Host-1 port info:
+   docker exec ib-sim-active bash -c 'export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so && smpquery portinfo 5 1'
+
+8. Query Spine-1 port info:
+   docker exec ib-sim-active bash -c 'export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so && smpquery portinfo 1 1'
+
+================================================================================
+PATH TESTING EXAMPLES
+================================================================================
+
+Same Leaf Communication (2 hops):
+  Host-1 → Leaf-1 → Host-2
+  saquery --src-to-dst 5:6
+
+Cross-Leaf Communication (4 hops):
+  Host-1 → Leaf-1 → Spine-1 or Spine-2 → Leaf-2 → Host-3
+  saquery --src-to-dst 5:7
+
+All Cross-Leaf Paths:
+  saquery --src-to-dst 5:7  # Host-1 to Host-3
+  saquery --src-to-dst 5:8  # Host-1 to Host-4
+  saquery --src-to-dst 6:7  # Host-2 to Host-3
+  saquery --src-to-dst 6:8  # Host-2 to Host-4
+
+================================================================================
+CONTAINER MANAGEMENT
+================================================================================
+
+Stop Container:
+  docker stop ib-sim-active
+
+Start Container (if stopped):
+  docker start ib-sim-active
+
+Restart Services (if needed):
+  docker exec -d ib-sim-active bash -c 'ibsim -s /workspace/my_fabric.topo'
+  docker exec -d ib-sim-active bash -c 'export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so && opensm -g 0x2c90200300001'
+
+View Logs:
+  docker logs ib-sim-active
+
+Check Running Processes:
+  docker exec ib-sim-active ps aux | grep -E "(ibsim|opensm)"
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Issue: Commands hang or timeout
+Solution: Restart OpenSM
+  docker exec -d ib-sim-active bash -c 'pkill opensm'
+  docker exec -d ib-sim-active bash -c 'export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so && opensm -g 0x2c90200300001'
+
+Issue: No LIDs assigned
+Solution: Wait for OpenSM to complete discovery (5-10 seconds after start)
+
+Issue: "cannot parse remote lid" warnings
+Solution: These are harmless warnings during topology parsing, ignore them
+
+Issue: Container exits immediately
+Solution: The container was restarted with 'tail -f /dev/null' to keep it running
+
+================================================================================
+LEARNING EXERCISES
+================================================================================
+
+1. Explore Redundancy:
+   - Query multiple paths between hosts on different leaves
+   - Traffic can route through either Spine-1 or Spine-2
+   - This provides fault tolerance
+
+2. Analyze Hop Counts:
+   - Same leaf: 2 hops (host → leaf → host)
+   - Cross leaf: 4 hops (host → leaf → spine → leaf → host)
+
+3. Test Switch Ports:
+   - Query each switch's port information
+   - See which ports connect to hosts vs other switches
+   - Check link speeds and states
+
+4. Study Routing Tables:
+   - Use 'ibroute' to see how switches route packets
+   - Understand how OpenSM calculated the paths
+
+5. Simulate Failures:
+   - Use ibportstate to disable a spine port
+   - Verify traffic reroutes through the other spine
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+For more detailed information, see:
+- SPINE_LEAF_TOPOLOGY_GUIDE.txt (Complete architecture guide)
+- HOST_COMMANDS_GUIDE.txt (Command reference)
+- spine_leaf_fabric.topo (Topology definition)
+
+To modify the topology:
+1. Edit spine_leaf_fabric.topo
+2. Restart the container:
+   docker stop ib-sim-active
+   docker rm ib-sim-active
+   docker run -d --name ib-sim-active \
+     -v "$(pwd)/spine_leaf_fabric.topo:/workspace/my_fabric.topo" \
+     -p 5000:5000 ib-simulator:latest tail -f /dev/null
+3. Start services manually (see Container Management section)
+
+================================================================================
+STATUS: ✓ VERIFIED WORKING
+================================================================================
+
+All components tested and confirmed operational:
+✓ 4 switches discovered (2 spine, 2 leaf)
+✓ 4 hosts discovered (2 per leaf)
+✓ OpenSM running and LIDs assigned
+✓ Same-leaf paths working (Host-1 ↔ Host-2)
+✓ Cross-leaf paths working (Host-1 ↔ Host-3)
+✓ Full mesh connectivity between spine and leaf tiers
+
+Ready for NVIDIA InfiniBand certification practice!
+
+================================================================================

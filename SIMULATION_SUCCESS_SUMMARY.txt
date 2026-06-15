@@ -1,0 +1,163 @@
+================================================================================
+INFINIBAND SIMULATION - SUCCESS SUMMARY
+================================================================================
+Date: 2026-06-10
+Container: ib-sim-active (Docker)
+Topology File: /workspace/fixed_fabric.topo
+
+================================================================================
+NETWORK TOPOLOGY
+================================================================================
+
+Switch: MySwitch (S-0002c90200200001)
+  - Vendor ID: 0x2c9
+  - Device ID: 0xc738
+  - Ports: 36
+  - LID: 2
+  - GUID: 0x0002c90200200001
+
+Host 1: H-0002c90200200002 (Host-1)
+  - Vendor ID: 0x2c9
+  - Device ID: 0x5a44
+  - Ports: 2
+  - LID: 3
+  - Connected to: Switch port 1
+  - Link Speed: 4xSDR
+
+Host 2: H-0002c90200200003 (Host-2)
+  - Vendor ID: 0x2c9
+  - Device ID: 0x5a44
+  - Ports: 2
+  - LID: 4
+  - Connected to: Switch port 2
+  - Link Speed: 4xSDR
+
+================================================================================
+ACTIVE CONNECTIONS (Link Records)
+================================================================================
+
+1. Switch Port 1 (LID 2) <---> Host-1 Port 1 (LID 3) - 4xSDR Active
+2. Switch Port 2 (LID 2) <---> Host-2 Port 1 (LID 4) - 4xSDR Active
+
+All links are ACTIVE and operational.
+
+================================================================================
+TOPOLOGY FILE FORMAT (Working Configuration)
+================================================================================
+
+Key requirements for ibsim topology files:
+1. Must use exact ibnetdiscover(8) man page format
+2. Each node requires: vendid, devid, sysimgguid/caguid, and switchguid (for switches)
+3. Port connections use bracket notation: [port_num]
+4. Use "Ca" for Host Channel Adapters (not "Hca")
+5. Port descriptions follow format: [N] "RemoteNode"[M] # comments
+
+Working topology file location:
+/workspace/fixed_fabric.topo
+
+================================================================================
+RUNNING PROCESSES
+================================================================================
+
+Process: ibsim (PID 437)
+  - Command: ibsim -s /workspace/fixed_fabric.topo
+  - Status: Running
+  - CPU: ~99% (simulation active)
+
+Process: opensm (PID 439)
+  - Command: opensm
+  - Status: Running (Subnet Manager in MASTER state)
+  - LD_PRELOAD: /usr/lib/umad2sim/libumad2sim.so
+
+================================================================================
+DIAGNOSTIC COMMANDS
+================================================================================
+
+All commands require the LD_PRELOAD environment variable:
+export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so
+
+Available commands:
+  ibnetdiscover       - Discover and map fabric topology
+  saquery -N          - Query node records
+  saquery -x          - Query link records
+  ibstat              - Show IB device status
+  smpquery NI 1 1     - Query node information
+
+================================================================================
+CONTAINER ACCESS
+================================================================================
+
+To access the running simulation:
+docker exec -it ib-sim-active bash
+
+Once inside, set the environment:
+export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so
+
+Then run any IB diagnostic commands.
+
+================================================================================
+TROUBLESHOOTING NOTES
+================================================================================
+
+Issue: Topology shows only switch, no hosts
+Cause: Incorrect topology file format
+Solution: Use exact ibnetdiscover format with proper vendid/devid/caguid
+
+Issue: "0 ports connected" warning
+Cause: Missing or malformed port connection lines
+Solution: Ensure [N] "NodeName"[M] format is exact
+
+Issue: Processes show as <defunct>
+Cause: Multiple ibsim instances running
+Solution: pkill -9 ibsim && pkill -9 opensm before restart
+
+================================================================================
+FILES GENERATED
+================================================================================
+
+All output files saved to current directory:
+- simulation_complete_output.txt    - Full simulation run output
+- topology_creation.txt              - Topology file creation log
+- ibsim_fixed_startup.txt           - ibsim startup log
+- opensm_fixed_startup.txt          - OpenSM startup log
+- current_fabric_output.txt         - Network discovery output
+- ibsim_parse_debug_output.txt      - Debug parsing information
+- startup_script_output.txt         - Container startup script
+
+================================================================================
+SUCCESS METRICS
+================================================================================
+
+✓ Topology file parsed successfully (20 lines)
+✓ Switch instantiated with correct GUID
+✓ 2 Host CAs created and connected
+✓ All port links established (4 bidirectional links)
+✓ OpenSM entered MASTER state
+✓ All nodes assigned LIDs (2, 3, 4)
+✓ Link speed: 4xSDR operational
+✓ Network discovery completed successfully
+
+================================================================================
+NEXT STEPS FOR NVIDIA CERTIFICATION TRAINING
+================================================================================
+
+1. Practice subnet management queries:
+   - saquery --help (see all available queries)
+   - Query path records between hosts
+   - Check partition key tables
+
+2. Test routing and forwarding:
+   - Examine linear forwarding tables
+   - Query switch info records
+
+3. Expand topology:
+   - Add more hosts (ports 3-36 available)
+   - Add multiple switches for complex fabric
+   - Test different link speeds (SDR, DDR, QDR)
+
+4. Simulate failures:
+   - Disable ports
+   - Test failover scenarios
+   - Monitor OpenSM reactions
+
+================================================================================
