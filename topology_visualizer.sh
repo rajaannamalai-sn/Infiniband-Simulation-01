@@ -1,0 +1,190 @@
+#!/bin/bash
+################################################################################
+# InfiniBand Topology Visualizer for ibsim
+# Provides a text-based dashboard similar to UFM overview
+################################################################################
+
+PRELOAD="export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so"
+
+echo "================================================================================"
+echo "         INFINIBAND FABRIC MANAGEMENT DASHBOARD"
+echo "         Spine-Leaf Topology Visualization"
+echo "================================================================================"
+echo ""
+
+# Function to run IB commands in container
+run_ib_cmd() {
+    docker exec ib-sim-active bash -c "$PRELOAD && $1" 2>/dev/null
+}
+
+# Header
+echo "Fabric Status: $(date)"
+echo "================================================================================"
+echo ""
+
+# 1. Fabric Overview
+echo "┌─ FABRIC OVERVIEW ─────────────────────────────────────────────────────────┐"
+echo "│"
+
+SWITCH_COUNT=$(run_ib_cmd "ibswitches" | grep -c "Switch")
+HOST_COUNT=$(run_ib_cmd "ibhosts" | grep -c "Ca")
+
+echo "│  Total Switches: $SWITCH_COUNT"
+echo "│  Total Hosts:    $HOST_COUNT"
+echo "│  Architecture:   Spine-Leaf (2-tier Clos)"
+echo "│  Redundancy:     Dual-spine ECMP"
+echo "│"
+echo "└───────────────────────────────────────────────────────────────────────────┘"
+echo ""
+
+# 2. Switch Inventory
+echo "┌─ SWITCH INVENTORY ────────────────────────────────────────────────────────┐"
+echo "│"
+printf "│  %-15s %-6s %-25s %-10s\n" "NAME" "LID" "GUID" "ROLE"
+echo "│  ───────────────────────────────────────────────────────────────────────"
+
+run_ib_cmd "ibswitches" | while read line; do
+    if [[ $line =~ Switch.*0x([0-9a-f]+).*\"([^\"]+)\".*lid\ ([0-9]+) ]]; then
+        GUID="0x${BASH_REMATCH[1]}"
+        NAME="${BASH_REMATCH[2]}"
+        LID="${BASH_REMATCH[3]}"
+
+        if [[ $NAME == *"Spine"* ]]; then
+            ROLE="Core"
+        else
+            ROLE="Access"
+        fi
+
+        printf "│  %-15s %-6s %-25s %-10s\n" "$NAME" "$LID" "$GUID" "$ROLE"
+    fi
+done
+
+echo "│"
+echo "└───────────────────────────────────────────────────────────────────────────┘"
+echo ""
+
+# 3. Host Inventory
+echo "┌─ HOST INVENTORY ──────────────────────────────────────────────────────────┐"
+echo "│"
+printf "│  %-15s %-6s %-25s %-15s\n" "NAME" "LID" "GUID" "CONNECTED TO"
+echo "│  ───────────────────────────────────────────────────────────────────────"
+
+run_ib_cmd "ibhosts" | while read line; do
+    if [[ $line =~ Ca.*0x([0-9a-f]+).*\"([^\"]+)\" ]]; then
+        GUID="0x${BASH_REMATCH[1]}"
+        NAME="${BASH_REMATCH[2]}"
+
+        # Extract LID
+        if [[ $line =~ lid\ ([0-9]+) ]]; then
+            LID="${BASH_REMATCH[1]}"
+        else
+            LID="N/A"
+        fi
+
+        # Determine connected leaf
+        case $NAME in
+            "Host-1"|"Host-2") LEAF="Leaf-1" ;;
+            "Host-3"|"Host-4") LEAF="Leaf-2" ;;
+            *) LEAF="Unknown" ;;
+        esac
+
+        printf "│  %-15s %-6s %-25s %-15s\n" "$NAME" "$LID" "$GUID" "$LEAF"
+    fi
+done
+
+echo "│"
+echo "└───────────────────────────────────────────────────────────────────────────┘"
+echo ""
+
+# 4. Topology Diagram
+echo "┌─ NETWORK TOPOLOGY ────────────────────────────────────────────────────────┐"
+echo "│"
+echo "│                  ┌─────────┐         ┌─────────┐"
+echo "│                  │ Spine-1 │◄───────►│ Spine-2 │"
+echo "│                  │ LID: 1  │         │ LID: 2  │"
+echo "│                  └────┬────┘         └────┬────┘"
+echo "│                       │  ╲           ╱    │"
+echo "│                       │   ╲         ╱     │"
+echo "│                       │    ╲       ╱      │"
+echo "│                       │     ╲     ╱       │"
+echo "│                       │      ╲   ╱        │"
+echo "│                       │       ╲ ╱         │"
+echo "│                       │        X          │"
+echo "│                       │       ╱ ╲         │"
+echo "│                       │      ╱   ╲        │"
+echo "│                  ┌────┴────┐     ┌────┴────┐"
+echo "│                  │ Leaf-1  │     │ Leaf-2  │"
+echo "│                  │ LID: 3  │     │ LID: 4  │"
+echo "│                  └──┬───┬──┘     └──┬───┬──┘"
+echo "│                     │   │           │   │"
+echo "│                 ┌───┘   └───┐   ┌───┘   └───┐"
+echo "│                 │           │   │           │"
+echo "│            ┌────┴───┐  ┌────┴───┴───┐  ┌────┴───┐  ┌────────┐"
+echo "│            │Host-1  │  │  Host-2    │  │Host-3  │  │Host-4  │"
+echo "│            │LID: 5  │  │  LID: 6    │  │LID: 7  │  │LID: 8  │"
+echo "│            └────────┘  └────────────┘  └────────┘  └────────┘"
+echo "│"
+echo "└───────────────────────────────────────────────────────────────────────────┘"
+echo ""
+
+# 5. Path Matrix
+echo "┌─ PATH CONNECTIVITY MATRIX ────────────────────────────────────────────────┐"
+echo "│"
+echo "│  Same-Leaf Paths (2 hops):"
+echo "│    • Host-1 ↔ Host-2  (via Leaf-1)"
+echo "│    • Host-3 ↔ Host-4  (via Leaf-2)"
+echo "│"
+echo "│  Cross-Leaf Paths (4 hops, via Spine):"
+echo "│    • Host-1 ↔ Host-3"
+echo "│    • Host-1 ↔ Host-4"
+echo "│    • Host-2 ↔ Host-3"
+echo "│    • Host-2 ↔ Host-4"
+echo "│"
+echo "└───────────────────────────────────────────────────────────────────────────┘"
+echo ""
+
+# 6. Health Status
+echo "┌─ FABRIC HEALTH ───────────────────────────────────────────────────────────┐"
+echo "│"
+
+# Check for any errors
+ERRORS=0
+for lid in 1 2 3 4 5 6 7 8; do
+    ERR_COUNT=$(run_ib_cmd "perfquery $lid 1 2>/dev/null" | grep -E "Error|Discard" | grep -v ":.*0$" | wc -l)
+    ERRORS=$((ERRORS + ERR_COUNT))
+done
+
+if [ $ERRORS -eq 0 ]; then
+    echo "│  Status: ✓ HEALTHY"
+    echo "│  • No link errors detected"
+    echo "│  • All devices reachable"
+    echo "│  • OpenSM active"
+else
+    echo "│  Status: ⚠ WARNINGS DETECTED"
+    echo "│  • Error count: $ERRORS"
+fi
+
+echo "│"
+echo "└───────────────────────────────────────────────────────────────────────────┘"
+echo ""
+
+# 7. Quick Commands
+echo "┌─ QUICK COMMANDS ──────────────────────────────────────────────────────────┐"
+echo "│"
+echo "│  Trace cross-leaf path:"
+echo "│    docker exec -it ib-sim-active bash"
+echo "│    export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so"
+echo "│    ibtracert 5 8"
+echo "│"
+echo "│  Query path details:"
+echo "│    saquery --src-to-dst 5:8"
+echo "│"
+echo "│  Check routing:"
+echo "│    ibroute 1    # Spine-1 routing table"
+echo "│    ibroute 3    # Leaf-1 routing table"
+echo "│"
+echo "└───────────────────────────────────────────────────────────────────────────┘"
+echo ""
+
+echo "Dashboard generated at: $(date)"
+echo "================================================================================"

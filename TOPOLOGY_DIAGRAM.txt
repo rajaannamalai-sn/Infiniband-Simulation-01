@@ -1,0 +1,404 @@
+================================================================================
+INFINIBAND TOPOLOGY DIAGRAM - VISUAL REFERENCE
+================================================================================
+
+================================================================================
+1. PHYSICAL TOPOLOGY OVERVIEW
+================================================================================
+
+                    ┌─────────────────────────────────┐
+                    │       MySwitch (Switch)         │
+                    │    LID: 2                       │
+                    │    GUID: 0x0002c90200200001     │
+                    │    Vendor: 0x2c9 (Mellanox)     │
+                    │    Device: 0xc738               │
+                    │    Ports: 36 (only 2 used)      │
+                    └─────────────────────────────────┘
+                           │                    │
+                     Port 1│                    │Port 2
+                     4xSDR │                    │4xSDR
+                  2.5 Gbps │                    │2.5 Gbps
+                           │                    │
+              ┌────────────┴─────┐    ┌────────┴──────────┐
+              │                  │    │                   │
+              ▼                  │    │                   ▼
+    ┌─────────────────┐          │    │         ┌─────────────────┐
+    │   Host-1 (CA)   │          │    │         │   Host-2 (CA)   │
+    │   LID: 3        │          │    │         │   LID: 4        │
+    │   Port GUID:    │          │    │         │   Port GUID:    │
+    │   0x..200003    │          │    │         │   0x..200004    │
+    │   System GUID:  │          │    │         │   System GUID:  │
+    │   0x..200002    │          │    │         │   0x..200003    │
+    └─────────────────┘          │    │         └─────────────────┘
+           Port 1                │    │                Port 1
+           Active                │    │                Active
+           LinkUp                │    │                LinkUp
+                                 │    │
+                    Path: Host-1 ─────→ Host-2
+                          (2 hops: H1→SW→H2)
+
+
+================================================================================
+2. LID (LOCAL IDENTIFIER) MAPPING TABLE
+================================================================================
+
+┌─────┬──────────────────────────┬───────────┬─────────┬──────────────┐
+│ LID │    Node Name             │   Type    │ Ports   │ Status       │
+├─────┼──────────────────────────┼───────────┼─────────┼──────────────┤
+│  2  │ S-0002c90200200001       │  Switch   │   36    │ Active       │
+│     │ "MySwitch"               │           │         │              │
+├─────┼──────────────────────────┼───────────┼─────────┼──────────────┤
+│  3  │ H-0002c90200200002       │    CA     │    2    │ Active       │
+│     │ "Host-1"                 │  (Host)   │         │              │
+├─────┼──────────────────────────┼───────────┼─────────┼──────────────┤
+│  4  │ H-0002c90200200003       │    CA     │    2    │ Active       │
+│     │ "Host-2"                 │  (Host)   │         │              │
+└─────┴──────────────────────────┴───────────┴─────────┴──────────────┘
+
+Note: LIDs are assigned by OpenSM (Subnet Manager) dynamically
+
+
+================================================================================
+3. GUID (GLOBALLY UNIQUE IDENTIFIER) MAPPING
+================================================================================
+
+Switch (MySwitch - LID 2):
+┌──────────────────────┬──────────────────────┐
+│  GUID Type           │  Value               │
+├──────────────────────┼──────────────────────┤
+│  System Image GUID   │ 0x0002c90200200001   │
+│  Node GUID           │ 0x0002c90200200001   │
+│  Port GUID (Port 0)  │ 0x0002c90200200001   │
+│  Switch GUID         │ 0x0002c90200200001   │
+└──────────────────────┴──────────────────────┘
+
+Host-1 (LID 3):
+┌──────────────────────┬──────────────────────┐
+│  GUID Type           │  Value               │
+├──────────────────────┼──────────────────────┤
+│  System GUID         │ 0x0002c90200200002   │
+│  CA GUID             │ 0x0002c90200200002   │
+│  Port GUID (Port 1)  │ 0x0002c90200200003   │
+└──────────────────────┴──────────────────────┘
+
+Host-2 (LID 4):
+┌──────────────────────┬──────────────────────┐
+│  GUID Type           │  Value               │
+├──────────────────────┼──────────────────────┤
+│  System GUID         │ 0x0002c90200200003   │
+│  CA GUID             │ 0x0002c90200200003   │
+│  Port GUID (Port 1)  │ 0x0002c90200200004   │
+└──────────────────────┴──────────────────────┘
+
+
+================================================================================
+4. PORT CONNECTION MATRIX
+================================================================================
+
+┌──────────────┬─────────┬──────────┬─────────────────┬──────────┬──────────┐
+│   From       │  From   │   From   │      To         │   To     │   To     │
+│   Device     │  LID    │   Port   │    Device       │   LID    │   Port   │
+├──────────────┼─────────┼──────────┼─────────────────┼──────────┼──────────┤
+│ MySwitch     │    2    │    1     │ ──────────────→ │    3     │    1     │
+│              │         │          │     Host-1      │          │          │
+├──────────────┼─────────┼──────────┼─────────────────┼──────────┼──────────┤
+│ Host-1       │    3    │    1     │ ←────────────── │    2     │    1     │
+│              │         │          │     MySwitch    │          │          │
+├──────────────┼─────────┼──────────┼─────────────────┼──────────┼──────────┤
+│ MySwitch     │    2    │    2     │ ──────────────→ │    4     │    1     │
+│              │         │          │     Host-2      │          │          │
+├──────────────┼─────────┼──────────┼─────────────────┼──────────┼──────────┤
+│ Host-2       │    4    │    1     │ ←────────────── │    2     │    2     │
+│              │         │          │     MySwitch    │          │          │
+└──────────────┴─────────┴──────────┴─────────────────┴──────────┴──────────┘
+
+All links: 4xSDR (2.5 Gbps), Active, Physical State: LinkUp
+
+
+================================================================================
+5. DETAILED NODE SPECIFICATIONS
+================================================================================
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ SWITCH: MySwitch                                                         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+  Node Name:          S-0002c90200200001
+  Description:        MySwitch
+  Type:               Switch (Managed)
+  LID:                2
+  LMC:                0
+
+  Identifiers:
+    Vendor ID:        0x2c9 (Mellanox Technologies)
+    Device ID:        0xc738
+    System GUID:      0x0002c90200200001
+    Node GUID:        0x0002c90200200001
+    Port GUID:        0x0002c90200200001
+    Switch GUID:      0x0002c90200200001(2c90200200001)
+
+  Capabilities:
+    Total Ports:      36
+    Ports Used:       2 (Ports 1 and 2)
+    Ports Available:  34 (Ports 3-36)
+    Partition Cap:    8
+    Revision:         0xA1
+
+  Port Details:
+    ┌──────┬─────────┬────────────┬──────────┬───────────┬───────────┐
+    │ Port │ State   │ Connected  │ Remote   │ Width     │ Speed     │
+    ├──────┼─────────┼────────────┼──────────┼───────────┼───────────┤
+    │  0   │ Active  │ Mgmt Port  │    -     │    -      │    -      │
+    │  1   │ Active  │ Host-1     │ LID 3    │ 4X        │ 2.5 Gbps  │
+    │  2   │ Active  │ Host-2     │ LID 4    │ 4X        │ 2.5 Gbps  │
+    │ 3-36 │ Down    │ Available  │    -     │    -      │    -      │
+    └──────┴─────────┴────────────┴──────────┴───────────┴───────────┘
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ HOST-1: Channel Adapter                                                 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+  Node Name:          H-0002c90200200002
+  Description:        Host-1
+  Type:               CA (Channel Adapter / Host)
+  LID:                3
+  LMC:                0
+
+  Identifiers:
+    Vendor ID:        0x2c9 (Mellanox Technologies)
+    Device ID:        0x5a44
+    System GUID:      0x0002c90200200002
+    CA GUID:          0x0002c90200200002
+    Port 1 GUID:      0x0002c90200200003
+
+  Capabilities:
+    Total Ports:      2
+    Active Ports:     1 (Port 1)
+
+  Port 1 Details:
+    State:            Active
+    Physical State:   LinkUp
+    Connected To:     MySwitch Port 1 (LID 2)
+    Link Width:       4X (Enabled, Supported, Active)
+    Link Speed:       2.5 Gbps (SDR)
+    MTU:              2048 bytes (0x84)
+    Rate:             10 Gbps (0x83)
+
+  IPv6 GID:
+    Port 1:           fe80::2:c902:20:3
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ HOST-2: Channel Adapter                                                 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+  Node Name:          H-0002c90200200003
+  Description:        Host-2
+  Type:               CA (Channel Adapter / Host)
+  LID:                4
+  LMC:                0
+
+  Identifiers:
+    Vendor ID:        0x2c9 (Mellanox Technologies)
+    Device ID:        0x5a44
+    System GUID:      0x0002c90200200003
+    CA GUID:          0x0002c90200200003
+    Port 1 GUID:      0x0002c90200200004
+
+  Capabilities:
+    Total Ports:      2
+    Active Ports:     1 (Port 1)
+
+  Port 1 Details:
+    State:            Active
+    Physical State:   LinkUp
+    Connected To:     MySwitch Port 2 (LID 2)
+    Link Width:       4X (Enabled, Supported, Active)
+    Link Speed:       2.5 Gbps (SDR)
+    MTU:              2048 bytes (0x84)
+    Rate:             10 Gbps (0x83)
+
+  IPv6 GID:
+    Port 1:           fe80::2:c902:20:4
+
+
+================================================================================
+6. ROUTING TABLE (PATH RECORDS)
+================================================================================
+
+Path: Host-1 → Host-2
+────────────────────────────────────────
+  Source LID (slid):        3 (Host-1)
+  Destination LID (dlid):   4 (Host-2)
+  Source GID:               fe80::2:c902:20:3
+  Destination GID:          fe80::2:c902:20:4
+
+  Route:
+    Host-1 Port 1
+         ↓ (4xSDR, 2.5 Gbps)
+    Switch Port 1 (LID 2)
+    [Internal Switch Forwarding]
+    Switch Port 2 (LID 2)
+         ↓ (4xSDR, 2.5 Gbps)
+    Host-2 Port 1
+
+  Path Properties:
+    Number of Hops:           2 (Host → Switch → Host)
+    Reversible:               Yes (0x80)
+    MTU:                      2048 bytes (0x84)
+    Rate:                     10 Gbps (0x83)
+    Packet Lifetime:          0x92
+    Partition Key (P_Key):    0xFFFF (default)
+    Service Level (SL):       0
+    QoS Class:                0
+
+
+Path: Host-2 → Host-1
+────────────────────────────────────────
+  Source LID (slid):        4 (Host-2)
+  Destination LID (dlid):   3 (Host-1)
+  Source GID:               fe80::2:c902:20:4
+  Destination GID:          fe80::2:c902:20:3
+
+  Route:
+    Host-2 Port 1
+         ↓ (4xSDR, 2.5 Gbps)
+    Switch Port 2 (LID 2)
+    [Internal Switch Forwarding]
+    Switch Port 1 (LID 2)
+         ↓ (4xSDR, 2.5 Gbps)
+    Host-1 Port 1
+
+  Path Properties:
+    Number of Hops:           2 (Host → Switch → Host)
+    Reversible:               Yes (0x80)
+    MTU:                      2048 bytes (0x84)
+    Rate:                     10 Gbps (0x83)
+    Packet Lifetime:          0x92
+    Partition Key (P_Key):    0xFFFF (default)
+    Service Level (SL):       0
+    QoS Class:                0
+
+
+================================================================================
+7. ADDRESS RESOLUTION TABLE
+================================================================================
+
+┌─────┬─────────────────────────┬──────────────────────┬──────────────────┐
+│ LID │    Node Description     │    Port GUID         │   IPv6 GID       │
+├─────┼─────────────────────────┼──────────────────────┼──────────────────┤
+│  2  │ MySwitch                │ 0x0002c90200200001   │ fe80::2:c902:20:1│
+│  3  │ Host-1                  │ 0x0002c90200200003   │ fe80::2:c902:20:3│
+│  4  │ Host-2                  │ 0x0002c90200200004   │ fe80::2:c902:20:4│
+└─────┴─────────────────────────┴──────────────────────┴──────────────────┘
+
+
+================================================================================
+8. VENDOR & DEVICE IDENTIFICATION
+================================================================================
+
+Vendor ID: 0x2c9
+  Company:        Mellanox Technologies (now NVIDIA Networking)
+  Founded:        1999
+  Acquired by:    NVIDIA (2020)
+
+Device IDs:
+  0xc738:         Switch/Director device
+  0x5a44:         ConnectX Host Channel Adapter
+
+Technology:
+  Link Type:      InfiniBand (IB)
+  Speed:          SDR (Single Data Rate) = 2.5 Gbps per lane
+  Width:          4X = 4 lanes = 10 Gbps total (4 × 2.5)
+
+  Speed Classifications:
+    SDR:          2.5 Gbps/lane   (10 Gbps @ 4X)
+    DDR:          5.0 Gbps/lane   (20 Gbps @ 4X)
+    QDR:          10.0 Gbps/lane  (40 Gbps @ 4X)
+    FDR:          14.0625 Gbps/lane (56 Gbps @ 4X)
+    EDR:          25.0 Gbps/lane  (100 Gbps @ 4X)
+    HDR:          50.0 Gbps/lane  (200 Gbps @ 4X)
+    NDR:          100.0 Gbps/lane (400 Gbps @ 4X)
+
+
+================================================================================
+9. TOPOLOGY STATISTICS
+================================================================================
+
+Network Summary:
+  Total Nodes:              3 (1 Switch + 2 Hosts)
+  Total Links:              2 (4 directional link records)
+  Active Ports:             4 (2 on switch, 1 on each host)
+  Available Ports:          34 (unused switch ports)
+
+  LID Range:                2-4 (3 LIDs assigned)
+  Subnet Prefix:            fe80:0000:0000:0000
+
+Subnet Manager:
+  Type:                     OpenSM
+  Version:                  3.3.23
+  State:                    MASTER
+  SM LID:                   2 (on switch)
+
+Link Statistics:
+  Total Bandwidth:          20 Gbps (2 links × 10 Gbps)
+  All Links State:          Active
+  All Physical States:      LinkUp
+  Link Errors:              0
+
+
+================================================================================
+10. QUICK REFERENCE - QUERY COMMANDS
+================================================================================
+
+Get this topology information with these commands:
+(Remember: export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so)
+
+Full Topology:
+  ibnetdiscover                    # Complete topology with all details
+
+Node Information:
+  saquery -N                       # All node records
+  smpquery nodeinfo 2              # Switch details
+  smpquery nodeinfo 3              # Host-1 details
+  smpquery nodeinfo 4              # Host-2 details
+
+Port Information:
+  smpquery portinfo 2 1            # Switch port 1 status
+  smpquery portinfo 2 2            # Switch port 2 status
+  smpquery portinfo 3 1            # Host-1 port 1 status
+  smpquery portinfo 4 1            # Host-2 port 1 status
+
+Link Information:
+  saquery -x                       # All link records
+  saquery LinkRecord 2 1           # Links from switch port 1
+
+Path Information:
+  saquery --src-to-dst 3:4         # Path Host-1 to Host-2
+  saquery --src-to-dst 4:3         # Path Host-2 to Host-1
+  saquery -p 3 4                   # Alternative syntax
+
+Performance Counters:
+  perfquery 3 1                    # Host-1 traffic counters
+  perfquery 4 1                    # Host-2 traffic counters
+
+
+================================================================================
+DIAGRAM LEGEND
+================================================================================
+
+Symbols:
+  │ ─ ┌ ┐ └ ┘    Box drawing characters for connections
+  → ←            Directional data flow
+  ↓ ↑            Vertical connections
+  ┏ ┓ ┗ ┛        Heavy box characters for emphasis
+
+Abbreviations:
+  CA             Channel Adapter (Host/End Node)
+  LID            Local Identifier (16-bit address)
+  GUID           Global Unique Identifier (64-bit)
+  GID            Global Identifier (128-bit IPv6-like)
+  P_Key          Partition Key
+  SL             Service Level
+  MTU            Maximum Transmission Unit
+  SDR            Single Data Rate (2.5 Gbps/lane)
+  SM             Subnet Manager
+  LMC            LID Mask Control
+
+================================================================================

@@ -1,0 +1,210 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2870
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;\f1\fmodern\fcharset0 Courier-Bold;\f2\fswiss\fcharset0 Arial-BoldMT;
+\f3\fswiss\fcharset0 ArialMT;\f4\fmodern\fcharset0 Courier;\f5\froman\fcharset0 Times-Roman;
+}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red0\green0\blue0;\red109\green109\blue109;
+\red0\green0\blue233;}
+{\*\expandedcolortbl;;\csgray\c0;\cssrgb\c0\c0\c0;\cssrgb\c50196\c50196\c50196;
+\cssrgb\c0\c0\c93333;}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat0\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}
+{\list\listtemplateid2\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}}{\leveltext\leveltemplateid101\'01\'00;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid2}
+{\list\listtemplateid3\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat0\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid201\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid3}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}{\listoverride\listid3\listoverridecount0\ls3}}
+\margl1440\margr1440\vieww24620\viewh9440\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs22 \cf2 \CocoaLigature0 How to Use:\
+\
+  Build the image:\
+  docker build -t ib-simulator . \'97>Make sure dot is needed\
+\
+  Run the simulation:\
+  docker run -it --privileged ib-simulator\
+\
+  Or run interactively:\
+  docker run -it --privileged ib-simulator /bin/bash\
+\
+  Inside the container, run diagnostic commands:\
+  export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so\
+\
+  ibnetdiscover          # Discover fabric topology\
+  saquery                # Query subnet administration\
+  ibstat                 # Show IB device status\
+  smpquery NI 1 1        # Query node info\
+\
+Spine and Leaf topology\
+\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+ docker run -d --name ib-sim-active \\\
+    -v $(pwd)/spine_leaf_fabric.topo:/etc/ibsim/topo.conf \\\
+    -p 5000:5000 ib-simulator:latest\
+\
+\
+docker ps -a | grep ib-sim-active)	\
+\
+ docker logs ib-sim-active\
+docker exec ib-sim-active bash -c 'ibsim -s /workspace/my_fabric.topo &'\
+ docker exec ib-sim-active bash -c 'export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so && opensm -g 0x200000 > /dev/null 2>&1\
+   &'\
+sleep 3 && docker exec ib-sim-active bash -c 'export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so && ibnetdiscover'\
+ docker exec ib-sim-active bash -c 'export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so && ibswitches'\
+ docker exec ib-sim-active bash -c 'export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so && ibhosts'\
+ docker exec ib-sim-active bash -c 'ps aux | grep opensm'\
+ docker exec -d ib-sim-active bash -c 'export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so && opensm -g 0x200000'\
+\
+ sleep 5 && docker exec ib-sim-active bash -c 'ps aux | grep opensm | grep -v grep'\
+\
+\
+\
+  Quick Access:\
+  docker exec -it ib-sim-active bash\
+  export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so\
+  ibswitches  # See all 4 switches\
+  ibhosts     # See all 4 hosts\
+  saquery --src-to-dst 5:7  # Query path Host-1 to Host-3\
+\
+\
+To access the simulation, you don't need /login. Instead, use:\
+\
+  # Access the container directly\
+  docker exec -it ib-sim-active bash\
+\
+  # Then set LD_PRELOAD\
+  export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so\
+\
+Troubleshooting on Real time to find which QP is taking error and which host\'92s GPU to other host\'92s GPU is affected\
+====================================================================================================================\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1\b\fs28 \cf0 \expnd0\expndtw0\kerning0
+\CocoaLigature1 \outl0\strokewidth0 \strokec3 rdma stat qp show
+\f2\fs40 \strokec3 \
+
+\f3\b0 \strokec3 \
+
+\f4\fs28 link mlx5_0/1 qpn 4112 type RC state RTS pid 89201 comm nccl-test\
+    tx_bytes 4398046511104 rx_bytes 4123115421184 tx_pkts 2820542310 rx_pkts 2643022105\
+    req_transport_retries_exceeded 0 local_ack_timeout_err 0\
+    resp_local_length_error 0 resp_cqe_error 0\
+    roce_adp_retrans 142 roce_adp_retrans_to 0\
+\
+Above cmds confirm GPU 0 is taking retransmission which should be HCA adapter 1 \
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f2\b\fs32 \cf0 \strokec3 GPU 0
+\f3\b0  maps to 
+\f1\b\fs28 mlx5_0
+\f3\b0\fs32  (HCA 1)\
+
+\f2\b GPU 1
+\f3\b0  maps to 
+\f1\b\fs28 mlx5_1
+\f3\b0\fs32  (HCA 2)\'85.
+\f4\fs28 \strokec3 \
+\pard\pardeftab720\partightenfactor0
+\cf0 Show ONLY the QPs that are actually dropping packets\
+=======================================================\
+rdma stat qp show | grep -B 4 -E "retrans [1-9][0-9]*"\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs22 \cf2 \kerning1\expnd0\expndtw0 \CocoaLigature0 \outl0\strokewidth0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+mpirun -np 16 -H dgx_host1:8,dgx_host2:8 \\\
+  -x NCCL_DEBUG=INFO -x NCCL_DEBUG_SUBSYS=INIT,ENV,NET \\\
+  /path/to/nccl-tests/build/all_reduce_perf -b 8M -e 1G -f 2 -g 1 > nccl_output.log 2>&1\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f3\fs32 \cf0 \expnd0\expndtw0\kerning0
+\CocoaLigature1 \outl0\strokewidth0 \strokec3 This command uses 
+\f2\b \strokec3 MPI (Message Passing Interface)
+\f5\b0\fs24 \strokec3  to orchestrate a distributed performance benchmark across two high-performance NVIDIA DGX A100 systems. \
+It floods the InfiniBand network fabric with heavy GPU-to-GPU data traffic while forcing NCCL to output granular network path mapping logs.\
+\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
+\ls1\ilvl0
+\f1\b\fs28 \cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\'95	}NCCL Test:\
+\ls1\ilvl0\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 {\listtext	\'95	}/path/to/nccl-tests/build/all_reduce_perf
+\f3\b0\fs32 : The target benchmark application. 
+\f4\fs28 AllReduce
+\f3\fs32  is a collective communication algorithm where every GPU sends data to\
+{\listtext	\'95	}every other GPU, sums up the values, and distributes the final result back to everyone. This is the exact communication pattern used during the backpropagation step of\
+{\listtext	\'95	}distributed deep learning training.\
+\pard\pardeftab720\partightenfactor0
+
+\fs28 \cf0 \strokec3 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf0 \strokec3 \
+
+\f2\b\fs40 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b0\fs22 \cf2 \kerning1\expnd0\expndtw0 \CocoaLigature0 \outl0\strokewidth0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\
+\
+\
+Quick Access\
+\
+  # Enter container\
+  docker exec -it ib-sim-active bash\
+\
+  # Set environment\
+  export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so\
+\
+  # Discover network\
+  ibnetdiscover\
+\
+  The simulation is ready for your NVIDIA InfiniBand certification training!\
+\
+\
+Docker cmds\
+============\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
+\ls2\ilvl0
+\f2\b\fs32 \cf0 \CocoaLigature1 {\listtext	1	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Execute the connection command
+\f3\b0  using your exact container ID:
+\fs40 bash\uc0\u8232 
+\fs32 \uc0\u8232 
+\f4\fs28 docker exec -it a2b03622d22a bash
+\f3\fs32 \
+\pard\pardeftab720\partightenfactor0
+
+\fs28 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\f2\b\fs40 \cf0 Managing the Container State\
+\pard\pardeftab720\partightenfactor0
+
+\f3\b0\fs32 \cf0 If you close your terminal or the container stops, manage it with these commands: [{\field{\*\fldinst{HYPERLINK "https://www.ibm.com/docs/en/z-logdata-analytics/5.1.0?topic=platform-starting-stopping-software-containers"}}{\fldrslt \cf5 \ul \ulc5 \strokec5 1}}]\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
+\ls3\ilvl0
+\f2\b \cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 View active containers:
+\f3\b0  
+\f4\fs28 docker ps
+\f3\fs32 \
+\ls3\ilvl0
+\f2\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Locate stopped containers:
+\f3\b0  
+\f4\fs28 docker ps -a
+\f3\fs32 \
+\ls3\ilvl0
+\f2\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Wake up a stopped container:
+\f3\b0  
+\f4\fs28 docker start a2b03622d22a
+\f3\fs32 \
+\ls3\ilvl0
+\f2\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Re-enter the workspace shell:
+\f3\b0  
+\f4\fs28 docker exec -it a2b03622d22a bash
+\f3\fs32 \
+}

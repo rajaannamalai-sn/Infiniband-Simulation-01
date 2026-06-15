@@ -1,0 +1,486 @@
+================================================================================
+HOST COMMANDS IN IBSIM - WHAT WORKS AND WHAT DOESN'T
+================================================================================
+
+IMPORTANT: ibsim is a MANAGEMENT PLANE simulator, not a full data plane
+simulator. It simulates fabric topology, subnet management, and SM queries,
+but does NOT simulate actual data transfer or RDMA operations.
+
+NOTE: This guide covers TWO topologies:
+  - Simple Topology: fixed_fabric.topo (1 switch, 2 hosts)
+  - Spine-Leaf Topology: spine_leaf_fabric.topo (4 switches, 4 hosts)
+
+================================================================================
+COMMANDS THAT WORK ✓
+================================================================================
+
+1. PATH QUERIES (Between Hosts)
+   saquery --src-to-dst 5:8          # Path from Host-1 to Host-4
+   saquery -p 5 8                    # Alternative syntax
+   saquery --src-to-dst 5:6          # Same-leaf path (Host-1 to Host-2)
+
+   Shows: LIDs, MTU, rate, reversibility, QoS settings
+   NOTE: Does NOT show hop-by-hop details, only source and destination
+
+2. PATH TRACING (Hop-by-Hop Route) ⭐ NEW
+   ibtracert 5 8                     # Trace route Host-1 to Host-4
+   ibtracert 5 6                     # Trace route Host-1 to Host-2
+
+   Shows: Complete hop-by-hop path through all switches
+   - Each intermediate switch and port number
+   - Which spine switch is used (for ECMP routing)
+   - Total hop count visualization
+
+   This is ESSENTIAL for understanding actual packet paths!
+
+3. PORT STATE QUERIES (Individual Hosts)
+   smpquery portinfo 5 1             # Host-1 port 1 info
+   smpquery portinfo 6 1             # Host-2 port 1 info
+
+   Shows: Link state, speed, width, physical state
+
+4. NODE INFORMATION (Host Details)
+   smpquery nodeinfo 5               # Host-1 node info
+   smpquery nodeinfo 6               # Host-2 node info
+
+   Shows: SystemGUID, NodeGUID, PortGUID, device type
+
+5. PERFORMANCE COUNTERS (Simulated Traffic)
+   perfquery 5 1                     # Host-1 port 1 counters
+   perfquery 6 1                     # Host-2 port 1 counters
+
+   Shows: Xmit/Rcv packets, data, errors (simulated values)
+   Note: Shows some traffic from SM queries, not real data transfer
+
+6. PORT STATE MANAGEMENT
+   ibportstate 3 3                   # Query Leaf-1 port 3 (Host-1)
+   ibportstate 4 4                   # Query Leaf-2 port 4 (Host-4)
+
+   Shows: Link state, width, speed for switch ports
+
+7. ADDRESS RESOLUTION
+   ibaddr -l 5                       # Get GUID for LID 5 (Host-1)
+   ibaddr -l 8                       # Get GUID for LID 8 (Host-4)
+
+8. SWITCH PORT QUERIES (Host Connections)
+   smpquery portinfo 3 3             # Leaf-1 port 3 (Host-1)
+   smpquery portinfo 3 4             # Leaf-1 port 4 (Host-2)
+
+9. ROUTING TABLE QUERIES
+   ibroute 1                         # Show Spine-1 routing table
+   ibroute 3                         # Show Leaf-1 routing table
+
+   Shows: How each switch routes packets to different LIDs
+
+10. FABRIC DISCOVERY
+    ibnetdiscover                    # Discover entire fabric
+    ibswitches                       # List all switches
+    ibhosts                          # List all hosts
+
+================================================================================
+COMMANDS THAT DON'T WORK ✗ (Data Plane Required)
+================================================================================
+
+1. IBPING (Host-to-Host Ping)
+   ibping -G 0x0002c90200200004      # Fails - no data plane
+
+   Limitation: ibsim doesn't simulate actual packet exchange
+
+2. IBSYSSTAT (System Status Query)
+   ibsysstat 2                       # Times out
+
+   Limitation: Requires full host CA simulation
+
+3. RDMA OPERATIONS
+   - ib_send_bw (bandwidth test)     # Not supported
+   - ib_write_lat (latency test)     # Not supported
+   - ib_read_bw (RDMA read test)     # Not supported
+
+   Limitation: No data plane, no actual memory registration
+
+4. MPI APPLICATIONS
+   - mpirun over IB                  # Not supported
+
+   Limitation: No actual data transfer capability
+
+5. OPENSM PERFORMANCE MANAGER
+   - Full perfmgr queries              # Limited support
+
+================================================================================
+PRACTICAL HOST COMMAND EXAMPLES (SPINE-LEAF TOPOLOGY)
+================================================================================
+
+TOPOLOGY REFERENCE:
+  Spine-1 (LID 1), Spine-2 (LID 2)
+  Leaf-1 (LID 3), Leaf-2 (LID 4)
+  Host-1 (LID 5), Host-2 (LID 6), Host-3 (LID 7), Host-4 (LID 8)
+
+Example 1: Trace Complete Path (Hop-by-Hop) ⭐ RECOMMENDED
+-----------------------------------------------------------
+docker exec -it ib-sim-active bash
+export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so
+
+# Same-leaf path (2 hops)
+ibtracert 5 6
+# Output: Host-1 → Leaf-1 → Host-2
+
+# Cross-leaf path (4 hops)
+ibtracert 5 8
+# Output: Host-1 → Leaf-1 → Spine-2 → Leaf-2 → Host-4
+
+# Another cross-leaf path
+ibtracert 5 7
+# Output: Host-1 → Leaf-1 → Spine-1 → Leaf-2 → Host-3
+
+Key Insight: Different cross-leaf paths may use different spine switches
+(ECMP load balancing)
+
+
+Example 2: Query Path Statistics
+---------------------------------
+# Cross-leaf path from Host-1 to Host-4
+saquery --src-to-dst 5:8
+
+# Output shows:
+# - Source LID (slid): 5 (Host-1)
+# - Destination LID (dlid): 8 (Host-4)
+# - MTU: 2048 bytes (0x84)
+# - Rate: 10 Gbps (0x83) [4x SDR]
+# - num_path_revers: 0x80 (reversible path)
+# - pkey: 0xFFFF (full partition membership)
+
+Note: This shows path characteristics but NOT the intermediate hops
+      Use ibtracert to see which switches the path uses
+
+
+Example 3: Compare Same-Leaf vs Cross-Leaf Paths
+-------------------------------------------------
+# Same-leaf (Host-1 to Host-2, both on Leaf-1)
+echo "=== Same-Leaf Path ==="
+ibtracert 5 6        # 2 hops
+saquery --src-to-dst 5:6
+
+# Cross-leaf (Host-1 to Host-3, different leaves)
+echo "=== Cross-Leaf Path ==="
+ibtracert 5 7        # 4 hops
+saquery --src-to-dst 5:7
+
+Observation: Cross-leaf adds 2 hops (via spine layer)
+
+
+Example 4: Observe ECMP Load Balancing
+---------------------------------------
+# Query all cross-leaf paths and note which spine is used
+ibtracert 5 7    # Host-1 to Host-3 (may use Spine-1)
+ibtracert 5 8    # Host-1 to Host-4 (may use Spine-2)
+ibtracert 6 7    # Host-2 to Host-3 (may use Spine-1)
+ibtracert 6 8    # Host-2 to Host-4 (may use Spine-2)
+
+OpenSM distributes traffic across both spines using ECMP routing
+
+
+Example 5: Check Routing Tables
+--------------------------------
+# See how Spine-1 routes to all hosts
+ibroute 1
+
+# See how Leaf-1 routes to hosts on Leaf-2
+ibroute 3
+
+# Understand routing decisions for cross-leaf traffic
+
+
+Example 6: Query Host Port Status
+----------------------------------
+# Host-1 full port information
+smpquery portinfo 5 1
+
+# Host-4 link status only
+smpquery portinfo 8 1 | grep -E 'LinkState|PhysLinkState|LinkSpeed|LinkWidth'
+
+
+Example 7: Monitor Performance Counters
+----------------------------------------
+# Check Host-1 traffic
+perfquery 5 1
+
+# Check Host-4 traffic
+perfquery 8 1
+
+# Look for:
+# - PortXmitPkts: Transmitted packets
+# - PortRcvPkts: Received packets
+# - PortXmitData: Transmitted data octets
+# - PortRcvData: Received data octets
+# - PortRcvErrors: Receive errors
+
+
+Example 8: Verify Switch Port Connections
+------------------------------------------
+# Leaf-1 port 3 (connected to Host-1)
+smpquery portinfo 3 3
+
+# Spine-1 port 1 (uplink from Leaf-1)
+smpquery portinfo 1 1
+
+# Spine-2 port 2 (downlink to Leaf-2)
+smpquery portinfo 2 2
+
+# Compare link states, speeds, and port roles (uplink vs downlink)
+
+================================================================================
+SIMULATING HOST-LEVEL OPERATIONS
+================================================================================
+
+While you cannot run actual data transfer, you CAN simulate scenarios:
+
+1. Link Failure Simulation
+   - Use ibportstate to disable/enable ports
+   - Observe OpenSM reaction and rerouting
+
+2. Performance Monitoring
+   - Query perfquery periodically
+   - Watch counter changes during SM sweeps
+
+3. Path Redundancy Testing
+   - Add multiple switches
+   - Query alternate paths with saquery
+
+4. Subnet Reconfiguration
+   - Modify topology file
+   - Restart simulation
+   - Verify new paths
+
+================================================================================
+WHAT IBSIM IS GOOD FOR
+================================================================================
+
+✓ Learning IB subnet management concepts
+✓ Understanding LID assignment and routing
+✓ Practicing diagnostic queries (smpquery, saquery)
+✓ Testing OpenSM configuration and behavior
+✓ Topology design and validation
+✓ Path computation understanding
+✓ Switch configuration practice
+✓ Fault scenario planning
+
+================================================================================
+WHAT IBSIM CANNOT DO
+================================================================================
+
+✗ Actual data transfer between hosts
+✗ RDMA read/write operations
+✗ Real bandwidth/latency measurements
+✗ MPI application testing
+✗ Full QoS and congestion control simulation
+✗ Real performance benchmarking
+
+================================================================================
+FOR REAL DATA PLANE TESTING
+================================================================================
+
+If you need actual host-to-host communication:
+
+1. Use real InfiniBand hardware
+2. Use soft-RoCE (RXE) on Linux VMs
+3. Use QEMU with SR-IOV passthrough
+4. Consider commercial IB simulators (e.g., Mellanox UFM)
+
+For NVIDIA certification, ibsim is perfect for learning subnet management,
+which is a critical component of the exam!
+
+================================================================================
+RECOMMENDED PRACTICE EXERCISES (SPINE-LEAF TOPOLOGY)
+================================================================================
+
+1. Path Discovery & Analysis:
+   - Use ibtracert to trace all 16 possible host-to-host paths
+   - Identify which paths are same-leaf (2 hops) vs cross-leaf (4 hops)
+   - Document which spine switch each cross-leaf path uses
+   - Verify ECMP load distribution across both spines
+
+2. Routing Table Study:
+   - Query routing tables for all 4 switches (ibroute 1, 2, 3, 4)
+   - Understand how Leaf switches route to local vs remote hosts
+   - See how Spine switches distribute traffic to both leaves
+   - Map LID forwarding decisions
+
+3. Redundancy & Fault Tolerance:
+   - Trace a cross-leaf path and note which spine it uses
+   - Simulate spine failure: disable that spine's ports
+   - Verify OpenSM reroutes traffic through the other spine
+   - Confirm all hosts remain reachable
+
+4. Performance Monitoring:
+   - Query performance counters for all hosts (perfquery 5-8)
+   - Run ibtracert multiple times and watch counters increment
+   - Compare traffic on Spine-1 vs Spine-2 ports
+   - Identify which ports carry the most SM traffic
+
+5. Topology Comprehension:
+   - Draw the topology from memory
+   - Use ibnetdiscover output to verify your drawing
+   - List all connections (which port connects to what)
+   - Explain why cross-leaf paths need 4 hops
+
+6. Query Mastery:
+   - Practice all 10 command types from "Commands That Work"
+   - For each host, query: nodeinfo, portinfo, paths, counters
+   - For each switch, query: nodeinfo, portinfo, routing table
+   - Time yourself - can you run all queries in under 5 minutes?
+
+7. Load Balancing Analysis:
+   - Run ibtracert for all 8 cross-leaf paths
+   - Tally which spine each path uses
+   - Calculate the distribution ratio (should be ~50/50)
+   - Understand OpenSM's ECMP algorithm
+
+8. Advanced Troubleshooting:
+   - Identify a "broken" path (pick any cross-leaf path)
+   - Use ibtracert to see current route
+   - Check port state at each hop (smpquery portinfo)
+   - Verify routing table entries (ibroute)
+   - Confirm path statistics (saquery --src-to-dst)
+
+================================================================================
+COMMAND QUICK REFERENCE (SPINE-LEAF TOPOLOGY)
+================================================================================
+
+Discovery Commands:
+  ibnetdiscover              # Full topology
+  ibswitches                 # All switches (LIDs 1-4)
+  ibhosts                    # All hosts (LIDs 5-8)
+
+Path Commands:
+  ibtracert 5 8              # Hop-by-hop trace ⭐
+  saquery --src-to-dst 5:8   # Path statistics
+  ibroute 1                  # Routing table
+
+Node Queries:
+  smpquery nodeinfo 5        # Host-1 info
+  smpquery portinfo 5 1      # Host-1 port info
+  perfquery 5 1              # Host-1 counters
+
+Switch Queries:
+  smpquery nodeinfo 1        # Spine-1 info
+  smpquery portinfo 1 1      # Spine-1 port 1 info
+  ibroute 1                  # Spine-1 routing
+
+Common Patterns:
+  # All same-leaf paths (2 hops each)
+  ibtracert 5 6              # Leaf-1: Host-1 ↔ Host-2
+  ibtracert 7 8              # Leaf-2: Host-3 ↔ Host-4
+
+  # All cross-leaf paths (4 hops each)
+  ibtracert 5 7              # Host-1 → Host-3
+  ibtracert 5 8              # Host-1 → Host-4
+  ibtracert 6 7              # Host-2 → Host-3
+  ibtracert 6 8              # Host-2 → Host-4
+
+================================================================================
+KEY DIFFERENCE: saquery vs ibtracert
+================================================================================
+
+Understanding when to use each command is critical for troubleshooting:
+
+saquery --src-to-dst
+─────────────────────
+Purpose: Get PATH CHARACTERISTICS
+Shows:
+  ✓ Source/Destination LIDs and GUIDs
+  ✓ MTU (Maximum Transmission Unit)
+  ✓ Rate (link speed)
+  ✓ Packet lifetime
+  ✓ QoS settings (SL, traffic class)
+  ✓ Partition key (security)
+  ✗ Does NOT show intermediate hops
+
+Best for:
+  - Checking if a path exists
+  - Verifying path parameters (MTU, rate)
+  - Confirming reversibility
+  - Checking QoS configuration
+
+Example Output:
+  slid: 5, dlid: 8
+  mtu: 0x84 (2048 bytes)
+  rate: 0x83 (10 Gbps)
+  ← You know source, destination, and characteristics
+
+
+ibtracert
+─────────
+Purpose: TRACE HOP-BY-HOP ROUTE
+Shows:
+  ✓ Every switch in the path
+  ✓ Which ports are used at each hop
+  ✓ Complete device chain
+  ✓ Actual routing decisions
+  ✗ Does NOT show path characteristics
+
+Best for:
+  - Understanding actual packet flow
+  - Identifying which spine is used (ECMP)
+  - Troubleshooting routing issues
+  - Verifying redundant paths
+  - Learning topology
+
+Example Output:
+  Host-1 → Leaf-1[port 3] → Spine-2[port 1] → Leaf-2[port 2] → Host-4
+  ← You see the complete journey
+
+
+WHEN TO USE BOTH:
+─────────────────
+For complete understanding, use BOTH commands together:
+
+1. ibtracert 5 8        # See the actual route taken
+2. saquery --src-to-dst 5:8   # Check path characteristics
+
+This gives you:
+  - Complete hop-by-hop path (from ibtracert)
+  - MTU and speed capabilities (from saquery)
+  - Full picture of connectivity
+
+
+REAL-WORLD ANALOGY:
+───────────────────
+Think of planning a road trip:
+
+saquery = Google Maps route summary
+  "Distance: 150 miles, Time: 2.5 hours, Highway speed: 65 mph"
+  (Shows characteristics, not the actual roads)
+
+ibtracert = Turn-by-turn directions
+  "Main St → Highway 101 → Exit 42 → Oak Ave → Destination"
+  (Shows every road you'll take)
+
+You need BOTH to fully understand the journey!
+
+================================================================================
+CERTIFICATION EXAM TIP
+================================================================================
+
+For NVIDIA InfiniBand certification, you MUST understand:
+
+1. How to trace paths with ibtracert
+   - Know the difference between same-leaf and cross-leaf paths
+   - Understand hop counts (2 vs 4 hops)
+
+2. How to interpret saquery output
+   - Know what MTU, rate, and partition keys mean
+   - Understand reversible paths
+
+3. Spine-Leaf Architecture
+   - Explain why cross-leaf needs spine layer
+   - Understand ECMP load balancing
+   - Know how redundancy works
+
+4. Troubleshooting methodology
+   - Always use ibtracert FIRST to see the path
+   - Then use saquery to check parameters
+   - Finally check individual hop status with smpquery
+
+Practice all commands in this guide until you can run them from memory!
+
+================================================================================

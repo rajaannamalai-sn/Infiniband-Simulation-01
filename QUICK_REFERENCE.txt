@@ -1,0 +1,96 @@
+================================================================================
+INFINIBAND SIMULATION - QUICK REFERENCE GUIDE
+================================================================================
+
+CONTAINER ACCESS
+----------------
+docker exec -it ib-sim-active bash
+export LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so
+
+RESTART SIMULATION
+------------------
+pkill ibsim
+pkill opensm
+ibsim -s /workspace/fixed_fabric.topo > ibsim.log 2>&1 &
+sleep 2
+env LD_PRELOAD=/usr/lib/umad2sim/libumad2sim.so opensm > opensm.log 2>&1 &
+sleep 3
+
+TOPOLOGY COMMANDS
+-----------------
+ibnetdiscover              # Full fabric topology
+ibnetdiscover -g           # Topology with GUIDs
+ibstat                     # IB device status
+
+NODE QUERIES
+------------
+saquery -N                 # All nodes
+saquery -N 2               # Node with LID 2
+saquery -L                 # List all LIDs
+saquery SWIR               # Switch info records
+
+PORT QUERIES
+------------
+saquery PIR                # All port info
+saquery PIR 2 1            # Port 1 on LID 2
+smpquery NI 2 0            # Node info for LID 2 port 0
+smpquery PI 2 1            # Port info for LID 2 port 1
+
+LINK QUERIES
+------------
+saquery -x                 # All link records
+saquery -x 2 1             # Links from LID 2 port 1
+
+PATH QUERIES
+------------
+saquery --src-to-dst 3:4   # Path from LID 3 to LID 4
+saquery -p 3 4             # Path record between hosts
+
+SERVICE QUERIES
+---------------
+saquery -c                 # SA class port info
+saquery -S                 # Service records
+
+CURRENT NETWORK
+---------------
+Switch (LID 2):   MySwitch - 36 ports
+Host-1 (LID 3):   Connected to switch port 1
+Host-2 (LID 4):   Connected to switch port 2
+
+EXPANDING TOPOLOGY
+------------------
+To add more hosts, edit /workspace/fixed_fabric.topo:
+
+1. Add host definition:
+vendid=0x2c9
+devid=0x5a44
+caguid=0x0002c90200200004
+Ca 2 "H-0002c90200200004" # "Host-3"
+[1] "S-0002c90200200001"[3] # "MySwitch"
+
+2. Add switch port connection:
+[3] "H-0002c90200200004"[1] # "Host-3"
+
+3. Restart simulation
+
+MONITORING
+----------
+tail -f /tmp/ibsim.log     # Watch ibsim logs
+tail -f /tmp/opensm.log    # Watch OpenSM logs
+watch -n1 'saquery -N'     # Monitor nodes
+
+TROUBLESHOOTING
+---------------
+No hosts visible?          Check topology format (use Ca not Hca)
+Links down?               Verify bidirectional port definitions
+Wrong GUIDs?              Ensure caguid matches port GUID in brackets
+Parse errors?             Check for tabs vs spaces in port lines
+
+FILES
+-----
+Topology: /workspace/fixed_fabric.topo
+Logs: /tmp/ibsim.log, /tmp/opensm.log
+Summary: SIMULATION_SUCCESS_SUMMARY.txt (local directory)
+This guide: QUICK_REFERENCE.txt
+
+================================================================================
